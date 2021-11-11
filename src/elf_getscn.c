@@ -68,7 +68,7 @@ elf_getscn (Elf *elf, size_t idx)
       Elf_Scn *scn0 = &runp->data[0];
       if (elf->class == ELFCLASS32)
 	{
-	  scn0->shdr.e32 = (Elf32_Shdr *) calloc (1, sizeof (Elf32_Shdr));
+	  scn0->shdr.e32 = calloc (1, sizeof (Elf32_Shdr));
 	  if (scn0->shdr.e32 == NULL)
 	    {
 	      __libelf_seterrno (ELF_E_NOMEM);
@@ -77,7 +77,7 @@ elf_getscn (Elf *elf, size_t idx)
 	}
       else
 	{
-	  scn0->shdr.e64 = (Elf64_Shdr *) calloc (1, sizeof (Elf64_Shdr));
+	  scn0->shdr.e64 = calloc (1, sizeof (Elf64_Shdr));
 	  if (scn0->shdr.e64 == NULL)
 	    {
 	      __libelf_seterrno (ELF_E_NOMEM);

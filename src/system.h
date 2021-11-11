@@ -29,6 +29,8 @@
 #ifndef LIB_SYSTEM_H
 #define LIB_SYSTEM_H	1
 
+#include <config.h>
+
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -37,6 +39,8 @@
 #include <byteswap.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdlib.h>
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 # define LE32(n)	(n)
@@ -67,6 +71,19 @@
 #if !HAVE_DECL_MEMPCPY
 #define mempcpy(dest, src, n) \
     ((void *) ((char *) memcpy (dest, src, n) + (size_t) n))
+#endif
+
+#if !HAVE_DECL_REALLOCARRAY
+static inline void *
+reallocarray (void *ptr, size_t nmemb, size_t size)
+{
+  if (size > 0 && nmemb > SIZE_MAX / size)
+    {
+      errno = ENOMEM;
+      return NULL;
+    }
+  return realloc (ptr, nmemb * size);
+}
 #endif
 
 /* Return TRUE if the start of STR matches PREFIX, FALSE otherwise.  */

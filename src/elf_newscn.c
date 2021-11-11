@@ -94,9 +94,9 @@ elf_newscn (Elf *elf)
 	  1
 #endif
 	  )
-      newp = (Elf_ScnList *) calloc (sizeof (Elf_ScnList)
-				     + ((elf->state.elf.scnincr *= 2)
-					* sizeof (Elf_Scn)), 1);
+      newp = calloc (sizeof (Elf_ScnList)
+		     + ((elf->state.elf.scnincr *= 2)
+			* sizeof (Elf_Scn)), 1);
       if (newp == NULL)
 	{
 	  __libelf_seterrno (ELF_E_NOMEM);
@@ -122,7 +122,7 @@ elf_newscn (Elf *elf)
   /* Create a section header for this section.  */
   if (elf->class == ELFCLASS32)
     {
-      result->shdr.e32 = (Elf32_Shdr *) calloc (1, sizeof (Elf32_Shdr));
+      result->shdr.e32 = calloc (1, sizeof (Elf32_Shdr));
       if (result->shdr.e32 == NULL)
 	{
 	  __libelf_seterrno (ELF_E_NOMEM);
@@ -131,7 +131,7 @@ elf_newscn (Elf *elf)
     }
   else
     {
-      result->shdr.e64 = (Elf64_Shdr *) calloc (1, sizeof (Elf64_Shdr));
+      result->shdr.e64 = calloc (1, sizeof (Elf64_Shdr));
       if (result->shdr.e64 == NULL)
 	{
 	  __libelf_seterrno (ELF_E_NOMEM);

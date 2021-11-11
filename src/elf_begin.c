@@ -774,7 +774,7 @@ read_long_names (Elf *elf)
   /* Due to the stupid format of the long name table entry (which are not
      NUL terminted) we have to provide an appropriate representation anyhow.
      Therefore we always make a copy which has the appropriate form.  */
-  newp = (char *) malloc (len);
+  newp = malloc (len);
   if (newp != NULL)
     {
       char *runp;

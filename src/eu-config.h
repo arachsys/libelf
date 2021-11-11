@@ -176,27 +176,68 @@ asm (".section predict_data, \"aw\"; .previous\n"
 /* This macro is used by the tests conditionalize for standalone building.  */
 #define ELFUTILS_HEADER(name) <lib##name.h>
 
+/* Don't reorder with global asm blocks or optimize away. (Doesn't reliably
+   keep it in the same LTO partition, though; -flto-partition=none may be
+   still needed for some gcc versions < 10.) */
+#ifdef __has_attribute
+# if __has_attribute(no_reorder)
+#  define used_in_asm __attribute__ ((externally_visible, no_reorder))
+# endif
+#endif
+#ifndef used_in_asm
+# define used_in_asm /* empty */
+#endif
 
 #ifdef SYMBOL_VERSIONING
-# define OLD_VERSION(name, version) \
-  asm (".globl _compat." #version "." #name "\n" \
-       "_compat." #version "." #name " = " #name "\n" \
-       ".symver _compat." #version "." #name "," #name "@" #version);
-# define NEW_VERSION(name, version) \
-  asm (".symver " #name "," #name "@@@" #version);
-# define COMPAT_VERSION_NEWPROTO(name, version, prefix) \
-  asm (".symver _compat." #version "." #name "," #name "@" #version); \
+# define NEW_INTDEF(name) __typeof (name) INTUSE(name) \
+  __attribute__ ((alias ("_new." #name))) attribute_hidden;
+# ifdef __has_attribute
+#  if __has_attribute(symver)
+#   define NEW_VERSION(name, version) \
+  __typeof (name) name __asm__ ("_new." #name) \
+    __attribute__ ((symver (#name "@@" #version)));
+#   define OLD_VERSION(name, version) _OLD_VERSION1(name, __COUNTER__, version)
+#   define _OLD_VERSION1(name, num, version) _OLD_VERSION2(name, num, version)
+#   define _OLD_VERSION2(name, num, version) \
+  __typeof (name) _compat_old##num##_##name \
+    __asm__ ("_compat." #version "." #name) \
+    __attribute__ ((alias ("_new." #name), symver (#name "@" #version)));
+#   define COMPAT_VERSION_NEWPROTO(name, version, prefix) \
   __typeof (_compat_##prefix##_##name) _compat_##prefix##_##name \
-    asm ("_compat." #version "." #name);
-# define COMPAT_VERSION(name, version, prefix) \
+    __asm__ ("_compat." #version "." #name) \
+    __attribute__ ((symver (#name "@" #version)));
+#   define COMPAT_VERSION(name, version, prefix) \
   asm (".symver _compat." #version "." #name "," #name "@" #version); \
-  __typeof (name) _compat_##prefix##_##name asm ("_compat." #version "." #name);
+  __typeof (name) _compat_##prefix##_##name \
+    __asm__ ("_compat." #version "." #name) \
+    __attribute__ ((symver (#name "@" #version)));
+#  endif
+# endif
+# ifndef NEW_VERSION
+#  define OLD_VERSION(name, version) \
+  asm (".globl _compat." #version "." #name "\n\t" \
+       "_compat." #version "." #name " = _new." #name "\n\t" \
+       ".symver _compat." #version "." #name "," #name "@" #version);
+#  define NEW_VERSION(name, version) \
+  __typeof (name) name __asm__ ("_new." #name) used_in_asm; \
+  asm (".symver _new." #name ", " #name "@@" #version);
+#  define COMPAT_VERSION_NEWPROTO(name, version, prefix) \
+  __typeof (_compat_##prefix##_##name) _compat_##prefix##_##name \
+    __asm__ ("_compat." #version "." #name) used_in_asm; \
+  asm (".symver _compat." #version "." #name ", " #name "@" #version);
+#  define COMPAT_VERSION(name, version, prefix) \
+  __typeof (name) _compat_##prefix##_##name \
+    __asm__ ("_compat." #version "." #name) used_in_asm; \
+  asm (".symver _compat." #version "." #name ", " #name "@" #version);
+# endif
 #else
+# define NEW_INTDEF(name) INTDEF(name)
 # define OLD_VERSION(name, version) /* Nothing for static linking.  */
 # define NEW_VERSION(name, version) /* Nothing for static linking.  */
 # define COMPAT_VERSION_NEWPROTO(name, version, prefix) \
   error "should use #ifdef SYMBOL_VERSIONING"
-# define COMPAT_VERSION(name, version, prefix) error "should use #ifdef SYMBOL_VERSIONING"
+# define COMPAT_VERSION(name, version, prefix) \
+  error "should use #ifdef SYMBOL_VERSIONING"
 #endif
 
 #ifndef FALLTHROUGH

@@ -71,7 +71,7 @@ __attribute__ ((unused))
 allocate_elf (int fildes, void *map_address, int64_t offset, size_t maxsize,
               Elf_Cmd cmd, Elf *parent, Elf_Kind kind, size_t extra)
 {
-  Elf *result = (Elf *) calloc (1, sizeof (Elf) + extra);
+  Elf *result = calloc (1, sizeof (Elf) + extra);
   if (result == NULL)
     __libelf_seterrno (ELF_E_NOMEM);
   else

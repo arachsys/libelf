@@ -146,7 +146,7 @@ convert_data (Elf_Scn *scn, int eclass,
 	scn->data_base = scn->rawdata_base;
       else
 	{
-	  scn->data_base = (char *) malloc (size);
+	  scn->data_base = malloc (size);
 	  if (scn->data_base == NULL)
 	    {
 	      __libelf_seterrno (ELF_E_NOMEM);
@@ -161,7 +161,7 @@ convert_data (Elf_Scn *scn, int eclass,
     {
       xfct_t fp;
 
-      scn->data_base = (char *) malloc (size);
+      scn->data_base = malloc (size);
       if (scn->data_base == NULL)
 	{
 	  __libelf_seterrno (ELF_E_NOMEM);
@@ -175,7 +175,7 @@ convert_data (Elf_Scn *scn, int eclass,
 	rawdata_source = scn->rawdata_base;
       else
 	{
-	  rawdata_source = (char *) malloc (size);
+	  rawdata_source = malloc (size);
 	  if (rawdata_source == NULL)
 	    {
 	      __libelf_seterrno (ELF_E_NOMEM);
@@ -328,8 +328,7 @@ __libelf_set_rawdata_wrlock (Elf_Scn *scn)
 
 	  /* We have to read the data from the file.  Allocate the needed
 	     memory.  */
-	  scn->rawdata_base = scn->rawdata.d.d_buf
-	    = (char *) malloc (size);
+	  scn->rawdata_base = scn->rawdata.d.d_buf = malloc (size);
 	  if (scn->rawdata.d.d_buf == NULL)
 	    {
 	      __libelf_seterrno (ELF_E_NOMEM);
@@ -384,7 +383,18 @@ __libelf_set_rawdata_wrlock (Elf_Scn *scn)
      which should be uncommon.  */
   align = align ?: 1;
   if (type != SHT_NOBITS && align > offset)
-    align = offset;
+    {
+      /* Align the offset to the next power of two. Uses algorithm from
+         https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2 */
+      align = offset - 1;
+      align |= align >> 1;
+      align |= align >> 2;
+      align |= align >> 4;
+      align |= align >> 8;
+      align |= align >> 16;
+      align |= align >> 32;
+      align++;
+    }
   scn->rawdata.d.d_align = align;
   if (elf->class == ELFCLASS32
       || (offsetof (struct Elf, state.elf32.ehdr)

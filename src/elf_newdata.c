@@ -106,7 +106,7 @@ elf_newdata (Elf_Scn *scn)
 	}
 
       /* Create a new, empty data descriptor.  */
-      result = (Elf_Data_List *) calloc (1, sizeof (Elf_Data_List));
+      result = calloc (1, sizeof (Elf_Data_List));
       if (result == NULL)
 	{
 	  __libelf_seterrno (ELF_E_NOMEM);
