@@ -56,7 +56,9 @@ get_zdata (Elf_Scn *strscn)
 static bool validate_str (const char *str, size_t from, size_t to)
 {
 #if HAVE_DECL_MEMRCHR
-  return memrchr (&str[from], '\0', to - from) != NULL;
+  // Check end first, which is likely a zero terminator, to prevent function call
+  return ((to > 0 && str[to - 1]  == '\0')
+	  || (to - from > 0 && memrchr (&str[from], '\0', to - from - 1) != NULL));
 #else
   do {
     if (to <= from)

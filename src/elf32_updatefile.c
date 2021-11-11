@@ -218,7 +218,7 @@ __elfw2(LIBELFBITS,updatemmap) (Elf *elf, int change_bo, size_t shnum)
 	return 1;
 
       Elf_ScnList *list = &elf->state.ELFW(elf,LIBELFBITS).scns;
-      Elf_Scn **scns = (Elf_Scn **) malloc (shnum * sizeof (Elf_Scn *));
+      Elf_Scn **scns = malloc (shnum * sizeof (Elf_Scn *));
       if (unlikely (scns == NULL))
 	{
 	  __libelf_seterrno (ELF_E_NOMEM);
@@ -688,7 +688,7 @@ __elfw2(LIBELFBITS,updatefile) (Elf *elf, int change_bo, size_t shnum)
 
       /* Get all sections into the array and sort them.  */
       Elf_ScnList *list = &elf->state.ELFW(elf,LIBELFBITS).scns;
-      Elf_Scn **scns = (Elf_Scn **) malloc (shnum * sizeof (Elf_Scn *));
+      Elf_Scn **scns = malloc (shnum * sizeof (Elf_Scn *));
       if (unlikely (scns == NULL))
 	{
 	  free (shdr_data_mem);

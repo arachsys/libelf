@@ -198,7 +198,7 @@ elf_getarsym (Elf *elf, size_t *ptr)
 
       /* Now we can allocate the arrays needed to store the index.  */
       size_t ar_sym_len = (n + 1) * sizeof (Elf_Arsym);
-      elf->state.ar.ar_sym = (Elf_Arsym *) malloc (ar_sym_len);
+      elf->state.ar.ar_sym = malloc (ar_sym_len);
       if (elf->state.ar.ar_sym != NULL)
 	{
 	  void *file_data; /* unit32_t[n] or uint64_t[n] */
@@ -216,8 +216,7 @@ elf_getarsym (Elf *elf, size_t *ptr)
 	      file_data = temp_data;
 
 	      ar_sym_len += index_size - n * w;
-	      Elf_Arsym *newp = (Elf_Arsym *) realloc (elf->state.ar.ar_sym,
-						       ar_sym_len);
+	      Elf_Arsym *newp = realloc (elf->state.ar.ar_sym, ar_sym_len);
 	      if (newp == NULL)
 		{
 		  free (elf->state.ar.ar_sym);
