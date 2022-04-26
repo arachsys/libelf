@@ -1,5 +1,6 @@
 /* Conversion functions for versioning information.
    Copyright (C) 1998, 1999, 2000, 2002, 2003, 2015 Red Hat, Inc.
+   Copyright (C) 2022 Mark J. Wielaard <mark@klomp.org>
    This file is part of elfutils.
    Written by Ulrich Drepper <drepper@redhat.com>, 1998.
 
@@ -66,7 +67,9 @@ elf_cvt_Verdef (void *dest, const void *src, size_t len, int encode)
       GElf_Verdaux *asrc;
 
       /* Test for correct offset.  */
-      if (def_offset > len || len - def_offset < sizeof (GElf_Verdef))
+      if (def_offset > len
+	  || len - def_offset < sizeof (GElf_Verdef)
+	  || (def_offset & (__alignof__ (GElf_Verdef) - 1)) != 0)
 	return;
 
       /* Work the tree from the first record.  */
@@ -84,10 +87,16 @@ elf_cvt_Verdef (void *dest, const void *src, size_t len, int encode)
 	  ddest->vd_aux = bswap_32 (dsrc->vd_aux);
 	  ddest->vd_next = bswap_32 (dsrc->vd_next);
 
+	  if (ddest->vd_aux > len - def_offset)
+	    return;
 	  aux_offset = def_offset + ddest->vd_aux;
 	}
       else
-	aux_offset = def_offset + dsrc->vd_aux;
+	{
+	  if (dsrc->vd_aux > len - def_offset)
+	    return;
+	  aux_offset = def_offset + dsrc->vd_aux;
+	}
 
       /* Handle all the auxiliary records belonging to this definition.  */
       do
@@ -95,26 +104,38 @@ elf_cvt_Verdef (void *dest, const void *src, size_t len, int encode)
 	  GElf_Verdaux *adest;
 
 	  /* Test for correct offset.  */
-	  if (aux_offset > len || len - aux_offset < sizeof (GElf_Verdaux))
+	  if (aux_offset > len
+	      || len - aux_offset < sizeof (GElf_Verdaux)
+	      || (aux_offset & (__alignof__ (GElf_Verdaux) - 1)) != 0)
 	    return;
 
 	  adest = (GElf_Verdaux *) ((char *) dest + aux_offset);
 	  asrc = (GElf_Verdaux *) ((char *) src + aux_offset);
 
 	  if (encode)
-	    aux_offset += asrc->vda_next;
+	    {
+	      if (asrc->vda_next > len - aux_offset)
+		return;
+	      aux_offset += asrc->vda_next;
+	    }
 
 	  adest->vda_name = bswap_32 (asrc->vda_name);
 	  adest->vda_next = bswap_32 (asrc->vda_next);
 
 	  if (! encode)
-	    aux_offset += adest->vda_next;
+	    {
+	      if (adest->vda_next > len - aux_offset)
+		return;
+	      aux_offset += adest->vda_next;
+	    }
 	}
       while (asrc->vda_next != 0);
 
       /* Encode now if necessary.  */
       if (encode)
 	{
+	  if (dsrc->vd_next > len - def_offset)
+	    return;
 	  def_offset += dsrc->vd_next;
 
 	  ddest->vd_version = bswap_16 (dsrc->vd_version);
@@ -126,7 +147,11 @@ elf_cvt_Verdef (void *dest, const void *src, size_t len, int encode)
 	  ddest->vd_next = bswap_32 (dsrc->vd_next);
 	}
       else
-	def_offset += ddest->vd_next;
+	{
+	  if (ddest->vd_next > len - def_offset)
+	    return;
+	  def_offset += ddest->vd_next;
+	}
     }
   while (dsrc->vd_next != 0);
 }
@@ -165,7 +190,9 @@ elf_cvt_Verneed (void *dest, const void *src, size_t len, int encode)
       GElf_Vernaux *asrc;
 
       /* Test for correct offset.  */
-      if (need_offset > len || len - need_offset < sizeof (GElf_Verneed))
+      if (need_offset > len
+	  || len - need_offset < sizeof (GElf_Verneed)
+	  || (need_offset & (__alignof__ (GElf_Verneed) - 1)) != 0)
 	return;
 
       /* Work the tree from the first record.  */
@@ -181,10 +208,16 @@ elf_cvt_Verneed (void *dest, const void *src, size_t len, int encode)
 	  ndest->vn_aux = bswap_32 (nsrc->vn_aux);
 	  ndest->vn_next = bswap_32 (nsrc->vn_next);
 
+	  if (ndest->vn_aux > len - need_offset)
+	    return;
 	  aux_offset = need_offset + ndest->vn_aux;
 	}
       else
-	aux_offset = need_offset + nsrc->vn_aux;
+	{
+	  if (nsrc->vn_aux > len - need_offset)
+	    return;
+	  aux_offset = need_offset + nsrc->vn_aux;
+	}
 
       /* Handle all the auxiliary records belonging to this requirement.  */
       do
@@ -192,14 +225,20 @@ elf_cvt_Verneed (void *dest, const void *src, size_t len, int encode)
 	  GElf_Vernaux *adest;
 
 	  /* Test for correct offset.  */
-	  if (aux_offset > len || len - aux_offset < sizeof (GElf_Vernaux))
+	  if (aux_offset > len
+	      || len - aux_offset < sizeof (GElf_Vernaux)
+	      || (aux_offset & (__alignof__ (GElf_Vernaux) - 1)) != 0)
 	    return;
 
 	  adest = (GElf_Vernaux *) ((char *) dest + aux_offset);
 	  asrc = (GElf_Vernaux *) ((char *) src + aux_offset);
 
 	  if (encode)
-	    aux_offset += asrc->vna_next;
+	    {
+	      if (asrc->vna_next > len - aux_offset)
+		return;
+	      aux_offset += asrc->vna_next;
+	    }
 
 	  adest->vna_hash = bswap_32 (asrc->vna_hash);
 	  adest->vna_flags = bswap_16 (asrc->vna_flags);
@@ -208,13 +247,19 @@ elf_cvt_Verneed (void *dest, const void *src, size_t len, int encode)
 	  adest->vna_next = bswap_32 (asrc->vna_next);
 
 	  if (! encode)
-	    aux_offset += adest->vna_next;
+	    {
+	      if (adest->vna_next > len - aux_offset)
+		return;
+	      aux_offset += adest->vna_next;
+	    }
 	}
       while (asrc->vna_next != 0);
 
       /* Encode now if necessary.  */
       if (encode)
 	{
+	  if (nsrc->vn_next > len - need_offset)
+	    return;
 	  need_offset += nsrc->vn_next;
 
 	  ndest->vn_version = bswap_16 (nsrc->vn_version);
@@ -224,7 +269,11 @@ elf_cvt_Verneed (void *dest, const void *src, size_t len, int encode)
 	  ndest->vn_next = bswap_32 (nsrc->vn_next);
 	}
       else
-	need_offset += ndest->vn_next;
+	{
+	  if (ndest->vn_next > len - need_offset)
+	    return;
+	  need_offset += ndest->vn_next;
+	}
     }
   while (nsrc->vn_next != 0);
 }

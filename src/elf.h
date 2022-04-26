@@ -1,5 +1,5 @@
 /* This file defines standard ELF types, structures, and macros.
-   Copyright (C) 1995-2020 Free Software Foundation, Inc.
+   Copyright (C) 1995-2022 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -336,7 +336,8 @@ typedef struct
 #define EM_BA2		202	/* Beyond BA2 */
 #define EM_XCORE	203	/* XMOS xCORE */
 #define EM_MCHP_PIC	204	/* Microchip 8-bit PIC(r) */
-				/* reserved 205-209 */
+#define EM_INTELGT	205	/* Intel Graphics Technology */
+				/* reserved 206-209 */
 #define EM_KM32		210	/* KM211 KM32 */
 #define EM_KMX32	211	/* KM211 KMX32 */
 #define EM_EMX16	212	/* KM211 KMX16 */
@@ -813,6 +814,10 @@ typedef struct
 					   address keys.  */
 #define NT_ARM_PACG_KEYS	0x408	/* ARM pointer authentication
 					   generic key.  */
+#define NT_ARM_TAGGED_ADDR_CTRL	0x409	/* AArch64 tagged address
+					   control.  */
+#define NT_ARM_PAC_ENABLED_KEYS	0x40a	/* AArch64 pointer authentication
+					   enabled keys.  */
 #define NT_VMCOREDD	0x700		/* Vmcore Device Dump Note.  */
 #define NT_MIPS_DSP	0x800		/* MIPS DSP ASE registers.  */
 #define NT_MIPS_FP_MODE	0x801		/* MIPS floating-point mode.  */
@@ -1226,8 +1231,7 @@ typedef struct
 #define AT_L3_CACHESIZE		46
 #define AT_L3_CACHEGEOMETRY	47
 
-#define AT_MINSIGSTKSZ		51 /* Stack needed for signal delivery
-				      (AArch64).  */
+#define AT_MINSIGSTKSZ		51 /* Stack needed for signal delivery  */
 
 /* Note section contents.  Each entry in the note section begins with
    a header of a fixed form.  */
@@ -1254,6 +1258,8 @@ typedef struct
 /* Note entries for GNU systems have this name.  */
 #define ELF_NOTE_GNU		"GNU"
 
+/* Note entries for freedesktop.org have this name.  */
+#define ELF_NOTE_FDO		"FDO"
 
 /* Defined types of notes for Solaris.  */
 
@@ -1297,6 +1303,10 @@ typedef struct
 /* Program property.  */
 #define NT_GNU_PROPERTY_TYPE_0 5
 
+/* Packaging metadata as defined on
+   https://systemd.io/COREDUMP_PACKAGE_METADATA/ */
+#define NT_FDO_PACKAGING_METADATA 0xcafe1a7e
+
 /* Note section name of program property.   */
 #define NOTE_GNU_PROPERTY_SECTION_NAME ".note.gnu.property"
 
@@ -1306,6 +1316,23 @@ typedef struct
 #define GNU_PROPERTY_STACK_SIZE			1
 /* No copy relocation on protected data symbol.  */
 #define GNU_PROPERTY_NO_COPY_ON_PROTECTED	2
+
+/* A 4-byte unsigned integer property: A bit is set if it is set in all
+   relocatable inputs.  */
+#define GNU_PROPERTY_UINT32_AND_LO	0xb0000000
+#define GNU_PROPERTY_UINT32_AND_HI	0xb0007fff
+
+/* A 4-byte unsigned integer property: A bit is set if it is set in any
+   relocatable inputs.  */
+#define GNU_PROPERTY_UINT32_OR_LO	0xb0008000
+#define GNU_PROPERTY_UINT32_OR_HI	0xb000ffff
+
+/* The needed properties by the object file.  */
+#define GNU_PROPERTY_1_NEEDED		GNU_PROPERTY_UINT32_OR_LO
+
+/* Set if the object file requires canonical function pointers and
+   cannot be used with copy relocation.  */
+#define GNU_PROPERTY_1_NEEDED_INDIRECT_EXTERN_ACCESS (1U << 0)
 
 /* Processor-specific semantics, lo */
 #define GNU_PROPERTY_LOPROC			0xc0000000
@@ -1324,31 +1351,26 @@ typedef struct
 
 /* The x86 instruction sets indicated by the corresponding bits are
    used in program.  Their support in the hardware is optional.  */
-#define GNU_PROPERTY_X86_ISA_1_USED		0xc0000000
+#define GNU_PROPERTY_X86_ISA_1_USED		0xc0010002
 /* The x86 instruction sets indicated by the corresponding bits are
    used in program and they must be supported by the hardware.   */
-#define GNU_PROPERTY_X86_ISA_1_NEEDED		0xc0000001
+#define GNU_PROPERTY_X86_ISA_1_NEEDED		0xc0008002
 /* X86 processor-specific features used in program.  */
 #define GNU_PROPERTY_X86_FEATURE_1_AND		0xc0000002
 
-#define GNU_PROPERTY_X86_ISA_1_486		(1U << 0)
-#define GNU_PROPERTY_X86_ISA_1_586		(1U << 1)
-#define GNU_PROPERTY_X86_ISA_1_686		(1U << 2)
-#define GNU_PROPERTY_X86_ISA_1_SSE		(1U << 3)
-#define GNU_PROPERTY_X86_ISA_1_SSE2		(1U << 4)
-#define GNU_PROPERTY_X86_ISA_1_SSE3		(1U << 5)
-#define GNU_PROPERTY_X86_ISA_1_SSSE3		(1U << 6)
-#define GNU_PROPERTY_X86_ISA_1_SSE4_1		(1U << 7)
-#define GNU_PROPERTY_X86_ISA_1_SSE4_2		(1U << 8)
-#define GNU_PROPERTY_X86_ISA_1_AVX		(1U << 9)
-#define GNU_PROPERTY_X86_ISA_1_AVX2		(1U << 10)
-#define GNU_PROPERTY_X86_ISA_1_AVX512F		(1U << 11)
-#define GNU_PROPERTY_X86_ISA_1_AVX512CD		(1U << 12)
-#define GNU_PROPERTY_X86_ISA_1_AVX512ER		(1U << 13)
-#define GNU_PROPERTY_X86_ISA_1_AVX512PF		(1U << 14)
-#define GNU_PROPERTY_X86_ISA_1_AVX512VL		(1U << 15)
-#define GNU_PROPERTY_X86_ISA_1_AVX512DQ		(1U << 16)
-#define GNU_PROPERTY_X86_ISA_1_AVX512BW		(1U << 17)
+/* GNU_PROPERTY_X86_ISA_1_BASELINE: CMOV, CX8 (cmpxchg8b), FPU (fld),
+   MMX, OSFXSR (fxsave), SCE (syscall), SSE and SSE2.  */
+#define GNU_PROPERTY_X86_ISA_1_BASELINE		(1U << 0)
+/* GNU_PROPERTY_X86_ISA_1_V2: GNU_PROPERTY_X86_ISA_1_BASELINE,
+   CMPXCHG16B (cmpxchg16b), LAHF-SAHF (lahf), POPCNT (popcnt), SSE3,
+   SSSE3, SSE4.1 and SSE4.2.  */
+#define GNU_PROPERTY_X86_ISA_1_V2		(1U << 1)
+/* GNU_PROPERTY_X86_ISA_1_V3: GNU_PROPERTY_X86_ISA_1_V2, AVX, AVX2, BMI1,
+   BMI2, F16C, FMA, LZCNT, MOVBE, XSAVE.  */
+#define GNU_PROPERTY_X86_ISA_1_V3		(1U << 2)
+/* GNU_PROPERTY_X86_ISA_1_V4: GNU_PROPERTY_X86_ISA_1_V3, AVX512F,
+   AVX512BW, AVX512CD, AVX512DQ and AVX512VL.  */
+#define GNU_PROPERTY_X86_ISA_1_V4		(1U << 3)
 
 /* This indicates that all executable sections are compatible with
    IBT.  */
@@ -4101,5 +4123,42 @@ enum
 #define R_ARC_TLS_DTPOFF_S9	0x4a
 #define R_ARC_TLS_LE_S9		0x4a
 #define R_ARC_TLS_LE_32		0x4b
+
+/* OpenRISC 1000 specific relocs.  */
+#define R_OR1K_NONE		0
+#define R_OR1K_32		1
+#define R_OR1K_16		2
+#define R_OR1K_8		3
+#define R_OR1K_LO_16_IN_INSN	4
+#define R_OR1K_HI_16_IN_INSN	5
+#define R_OR1K_INSN_REL_26	6
+#define R_OR1K_GNU_VTENTRY	7
+#define R_OR1K_GNU_VTINHERIT	8
+#define R_OR1K_32_PCREL		9
+#define R_OR1K_16_PCREL		10
+#define R_OR1K_8_PCREL		11
+#define R_OR1K_GOTPC_HI16	12
+#define R_OR1K_GOTPC_LO16	13
+#define R_OR1K_GOT16		14
+#define R_OR1K_PLT26		15
+#define R_OR1K_GOTOFF_HI16	16
+#define R_OR1K_GOTOFF_LO16	17
+#define R_OR1K_COPY		18
+#define R_OR1K_GLOB_DAT		19
+#define R_OR1K_JMP_SLOT		20
+#define R_OR1K_RELATIVE		21
+#define R_OR1K_TLS_GD_HI16	22
+#define R_OR1K_TLS_GD_LO16	23
+#define R_OR1K_TLS_LDM_HI16	24
+#define R_OR1K_TLS_LDM_LO16	25
+#define R_OR1K_TLS_LDO_HI16	26
+#define R_OR1K_TLS_LDO_LO16	27
+#define R_OR1K_TLS_IE_HI16	28
+#define R_OR1K_TLS_IE_LO16	29
+#define R_OR1K_TLS_LE_HI16	30
+#define R_OR1K_TLS_LE_LO16	31
+#define R_OR1K_TLS_TPOFF	32
+#define R_OR1K_TLS_DTPOFF	33
+#define R_OR1K_TLS_DTPMOD	34
 
 #endif	/* elf.h */

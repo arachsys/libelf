@@ -1,5 +1,6 @@
 /* Return converted data from raw chunk of ELF file.
    Copyright (C) 2007, 2014, 2015 Red Hat, Inc.
+   Copyright (C) 2022 Mark J. Wielaard <mark@klomp.org>
    This file is part of elfutils.
 
    This file is free software; you can redistribute it and/or modify
@@ -74,6 +75,20 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
   Elf_Data *result = NULL;
 
   rwlock_rdlock (elf->lock);
+
+  /* Maybe we already got this chunk?  */
+  Elf_Data_Chunk *rawchunks = elf->state.elf.rawchunks;
+  while (rawchunks != NULL)
+    {
+      if ((rawchunks->offset == offset || size == 0)
+	  && rawchunks->data.d.d_size == size
+	  && rawchunks->data.d.d_type == type)
+	{
+	  result = &rawchunks->data.d;
+	  goto out;
+	}
+      rawchunks = rawchunks->next;
+    }
 
   size_t align = __libelf_type_align (elf->class, type);
   if (elf->map_address != NULL)
@@ -171,6 +186,7 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
   chunk->data.d.d_type = type;
   chunk->data.d.d_align = align;
   chunk->data.d.d_version = EV_CURRENT;
+  chunk->offset = offset;
 
   rwlock_unlock (elf->lock);
   rwlock_wrlock (elf->lock);

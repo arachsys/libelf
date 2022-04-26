@@ -1,5 +1,6 @@
 /* Return the next data element from the section after possibly converting it.
    Copyright (C) 1998-2005, 2006, 2007, 2015, 2016 Red Hat, Inc.
+   Copyright (C) 2022 Mark J. Wielaard <mark@klomp.org>
    This file is part of elfutils.
    Written by Ulrich Drepper <drepper@redhat.com>, 1998.
 
@@ -77,7 +78,6 @@ static const Elf_Type shtype_map[TYPEIDX (SHT_HISUNW) + 1] =
 const uint_fast8_t __libelf_type_aligns[ELFCLASSNUM - 1][ELF_T_NUM] =
   {
 # define TYPE_ALIGNS(Bits)						      \
-    {									      \
       [ELF_T_ADDR] = __alignof__ (ElfW2(Bits,Addr)),			      \
       [ELF_T_EHDR] = __alignof__ (ElfW2(Bits,Ehdr)),			      \
       [ELF_T_HALF] = __alignof__ (ElfW2(Bits,Half)),			      \
@@ -100,13 +100,17 @@ const uint_fast8_t __libelf_type_aligns[ELFCLASSNUM - 1][ELF_T_NUM] =
       [ELF_T_MOVE] = __alignof__ (ElfW2(Bits,Move)),			      \
       [ELF_T_LIB] = __alignof__ (ElfW2(Bits,Lib)),			      \
       [ELF_T_NHDR] = __alignof__ (ElfW2(Bits,Nhdr)),			      \
-      [ELF_T_GNUHASH] = __alignof__ (Elf32_Word),			      \
       [ELF_T_AUXV] = __alignof__ (ElfW2(Bits,auxv_t)),			      \
       [ELF_T_CHDR] = __alignof__ (ElfW2(Bits,Chdr)),			      \
-      [ELF_T_NHDR8] = 8 /* Special case for GNU Property note.  */	      \
-    }
-      [ELFCLASS32 - 1] = TYPE_ALIGNS (32),
-      [ELFCLASS64 - 1] = TYPE_ALIGNS (64),
+      [ELF_T_NHDR8] = 8 /* Special case for GNU Property note.  */
+    [ELFCLASS32 - 1] =  {
+	TYPE_ALIGNS (32),
+	[ELF_T_GNUHASH] = __alignof__ (Elf32_Word),
+    },
+    [ELFCLASS64 - 1] = {
+	TYPE_ALIGNS (64),
+	[ELF_T_GNUHASH] = __alignof__ (Elf64_Xword),
+    },
 # undef TYPE_ALIGNS
   };
 
