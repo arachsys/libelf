@@ -6,7 +6,7 @@ LDFLAGS =
 LDLIBS = -lz
 
 MAJOR = 1
-MINOR = 0.185
+MINOR = 0.187
 
 HEADERS = $(wildcard include/*.h src/*.h)
 SOURCES = $(wildcard src/*.c)

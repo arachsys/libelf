@@ -266,6 +266,7 @@ typedef struct Elf_Data_Chunk
     Elf_Scn dummy_scn;
     struct Elf_Data_Chunk *next;
   };
+  int64_t offset;		/* The original raw offset in the Elf image.  */
 } Elf_Data_Chunk;
 
 
@@ -603,10 +604,10 @@ extern void __libelf_reset_rawdata (Elf_Scn *scn, void *buf, size_t size,
 /* Align offset to 4 bytes as needed for note name and descriptor data.
    This is almost always used, except for GNU Property notes, which use
    8 byte padding...  */
-#define NOTE_ALIGN4(n)	(((n) + 3) & -4U)
+#define NOTE_ALIGN4(n)	(((n) + 3) & -4UL)
 
 /* Special note padding rule for GNU Property notes.  */
-#define NOTE_ALIGN8(n)	(((n) + 7) & -8U)
+#define NOTE_ALIGN8(n)	(((n) + 7) & -8UL)
 
 /* Convenience macro.  */
 #define INVALID_NDX(ndx, type, data) \

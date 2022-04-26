@@ -1,5 +1,6 @@
 /* Transformation functions for ELF data types.
    Copyright (C) 1998,1999,2000,2002,2004,2005,2006,2007,2015 Red Hat, Inc.
+   Copyright (C) 2022 Mark J. Wielaard <mark@klomp.org>
    This file is part of elfutils.
    Written by Ulrich Drepper <drepper@redhat.com>, 1998.
 
@@ -138,9 +139,14 @@ union unaligned
 			    int encode __attribute__ ((unused)))	      \
   { ElfW2(Bits, Name) *tdest = (ElfW2(Bits, Name) *) dest;		      \
     ElfW2(Bits, Name) *tsrc = (ElfW2(Bits, Name) *) src;		      \
+    size_t sz = sizeof (ElfW2(Bits, Name));				      \
     size_t n;								      \
-    for (n = len / sizeof (ElfW2(Bits, Name)); n > 0; ++tdest, ++tsrc, --n) {
-#define END(Bits, Name) } }
+    for (n = len / sz; n > 0; ++tdest, ++tsrc, --n) {
+#define END(Bits, Name)							      \
+    }									      \
+    if (len % sz > 0) /* Cannot convert partial structures, just copy. */     \
+      memmove (dest, src, len % sz);					      \
+  }
 #define TYPE_EXTRA(Code)
 #define TYPE_XLATE(Code) Code
 #define TYPE_NAME(Type, Name) TYPE_NAME2 (Type, Name)

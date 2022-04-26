@@ -1,5 +1,6 @@
 /* Create descriptor for processing file.
    Copyright (C) 1998-2010, 2012, 2014, 2015, 2016 Red Hat, Inc.
+   Copyright (C) 2021, 2022 Mark J. Wielaard <mark@klomp.org>
    This file is part of elfutils.
    Written by Ulrich Drepper <drepper@redhat.com>, 1998.
 
@@ -157,7 +158,8 @@ get_shnum (void *map_address, unsigned char *e_ident, int fildes,
 
 	  if (likely (map_address != NULL) && e_ident[EI_DATA] == MY_ELFDATA
 	      && (ALLOW_UNALIGNED
-		  || (((size_t) ((char *) map_address + ehdr.e32->e_shoff))
+		  || (((size_t) ((char *) (map_address + ehdr.e32->e_shoff
+					   + offset)))
 		      & (__alignof__ (Elf32_Shdr) - 1)) == 0))
 	    /* We can directly access the memory.  */
 	    result = ((Elf32_Shdr *) ((char *) map_address + ehdr.e32->e_shoff
@@ -170,9 +172,10 @@ get_shnum (void *map_address, unsigned char *e_ident, int fildes,
 	      if (likely (map_address != NULL))
 		/* gcc will optimize the memcpy to a simple memory
 		   access while taking care of alignment issues.  */
-		memcpy (&size, &((Elf32_Shdr *) ((char *) map_address
-						 + ehdr.e32->e_shoff
-						 + offset))->sh_size,
+		memcpy (&size, ((char *) map_address
+					 + ehdr.e32->e_shoff
+					 + offset
+					 + offsetof (Elf32_Shdr, sh_size)),
 			sizeof (Elf32_Word));
 	      else
 		if (unlikely ((r = pread_retry (fildes, &size,
@@ -216,7 +219,8 @@ get_shnum (void *map_address, unsigned char *e_ident, int fildes,
 	  Elf64_Xword size;
 	  if (likely (map_address != NULL) && e_ident[EI_DATA] == MY_ELFDATA
 	      && (ALLOW_UNALIGNED
-		  || (((size_t) ((char *) map_address + ehdr.e64->e_shoff))
+		  || (((size_t) ((char *) (map_address + ehdr.e64->e_shoff
+					   + offset)))
 		      & (__alignof__ (Elf64_Shdr) - 1)) == 0))
 	    /* We can directly access the memory.  */
 	    size = ((Elf64_Shdr *) ((char *) map_address + ehdr.e64->e_shoff
@@ -227,9 +231,10 @@ get_shnum (void *map_address, unsigned char *e_ident, int fildes,
 	      if (likely (map_address != NULL))
 		/* gcc will optimize the memcpy to a simple memory
 		   access while taking care of alignment issues.  */
-		memcpy (&size, &((Elf64_Shdr *) ((char *) map_address
-						 + ehdr.e64->e_shoff
-						 + offset))->sh_size,
+		memcpy (&size, ((char *) map_address
+					 + ehdr.e64->e_shoff
+					 + offset
+					 + offsetof (Elf64_Shdr, sh_size)),
 			sizeof (Elf64_Xword));
 	      else
 		if (unlikely ((r = pread_retry (fildes, &size,
@@ -380,7 +385,7 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
       if (map_address != NULL && e_ident[EI_DATA] == MY_ELFDATA
 	  && cmd != ELF_C_READ_MMAP /* We need a copy to be able to write.  */
 	  && (ALLOW_UNALIGNED
-	      || (((uintptr_t) ((char *) ehdr + e_shoff)
+	      || ((((uintptr_t) ehdr + e_shoff)
 		   & (__alignof__ (Elf32_Shdr) - 1)) == 0)))
 	{
 	  if (unlikely (scncnt > 0 && e_shoff >= maxsize)
@@ -392,8 +397,10 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
 	      __libelf_seterrno (ELF_E_INVALID_ELF);
 	      return NULL;
 	    }
-	  elf->state.elf32.shdr
-	    = (Elf32_Shdr *) ((char *) ehdr + e_shoff);
+
+	  if (scncnt > 0)
+	    elf->state.elf32.shdr
+	      = (Elf32_Shdr *) ((char *) ehdr + e_shoff);
 
 	  for (size_t cnt = 0; cnt < scncnt; ++cnt)
 	    {
@@ -482,15 +489,17 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
       if (map_address != NULL && e_ident[EI_DATA] == MY_ELFDATA
 	  && cmd != ELF_C_READ_MMAP /* We need a copy to be able to write.  */
 	  && (ALLOW_UNALIGNED
-	      || (((uintptr_t) ((char *) ehdr + e_shoff)
+	      || ((((uintptr_t) ehdr + e_shoff)
 		   & (__alignof__ (Elf64_Shdr) - 1)) == 0)))
 	{
 	  if (unlikely (scncnt > 0 && e_shoff >= maxsize)
 	      || unlikely (maxsize - e_shoff
 			   < scncnt * sizeof (Elf64_Shdr)))
 	    goto free_and_out;
-	  elf->state.elf64.shdr
-	    = (Elf64_Shdr *) ((char *) ehdr + e_shoff);
+
+	  if (scncnt > 0)
+	    elf->state.elf64.shdr
+	      = (Elf64_Shdr *) ((char *) ehdr + e_shoff);
 
 	  for (size_t cnt = 0; cnt < scncnt; ++cnt)
 	    {
@@ -756,6 +765,11 @@ read_long_names (Elf *elf)
 	  *((char *) mempcpy (buf, hdr->ar_size, sizeof (hdr->ar_size))) = '\0';
 	  string = buf;
 	}
+
+      /* atol expects to see at least one digit.
+	 It also cannot be negative (-).  */
+      if (!isdigit(string[0]))
+	return NULL;
       len = atol (string);
 
       if (memcmp (hdr->ar_name, "//              ", 16) == 0)
