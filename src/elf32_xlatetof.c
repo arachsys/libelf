@@ -32,7 +32,6 @@
 #endif
 
 #include <assert.h>
-#include <endian.h>
 #include <string.h>
 
 #include "libelfP.h"
@@ -83,8 +82,8 @@ elfw2(LIBELFBITS, xlatetof) (Elf_Data *dest, const Elf_Data *src,
 	and vice versa since the function only has to copy and/or
 	change the byte order.
   */
-  if ((__BYTE_ORDER == __LITTLE_ENDIAN && encode == ELFDATA2LSB)
-      || (__BYTE_ORDER == __BIG_ENDIAN && encode == ELFDATA2MSB))
+  if ((BYTE_ORDER == LITTLE_ENDIAN && encode == ELFDATA2LSB)
+      || (BYTE_ORDER == BIG_ENDIAN && encode == ELFDATA2MSB))
     {
       /* We simply have to copy since the byte order is the same.  */
       if (src->d_buf != dest->d_buf)

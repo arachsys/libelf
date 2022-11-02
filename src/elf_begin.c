@@ -39,11 +39,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 
-#include <system.h>
 #include "libelfP.h"
 #include "common.h"
 
@@ -977,7 +974,8 @@ __libelf_next_arhdr_wrlock (Elf *elf)
      atoll depending on the size of the types.  We are also prepared
      for the case where the whole field in the `struct ar_hdr' is
      filled in which case we cannot simply use atol/l but instead have
-     to create a temporary copy.  */
+     to create a temporary copy.  Note that all fields use decimal
+     encoding, except ar_mode which uses octal.  */
 
 #define INT_FIELD(FIELD)						      \
   do									      \
@@ -997,10 +995,30 @@ __libelf_next_arhdr_wrlock (Elf *elf)
     }									      \
   while (0)
 
+#define OCT_FIELD(FIELD)						      \
+  do									      \
+    {									      \
+      char buf[sizeof (ar_hdr->FIELD) + 1];				      \
+      const char *string = ar_hdr->FIELD;				      \
+      if (ar_hdr->FIELD[sizeof (ar_hdr->FIELD) - 1] != ' ')		      \
+	{								      \
+	  *((char *) mempcpy (buf, ar_hdr->FIELD, sizeof (ar_hdr->FIELD)))  \
+	    = '\0';							      \
+	  string = buf;							      \
+	}								      \
+      if (sizeof (elf_ar_hdr->FIELD) <= sizeof (long int))		      \
+	elf_ar_hdr->FIELD						      \
+	  = (__typeof (elf_ar_hdr->FIELD)) strtol (string, NULL, 8);	      \
+      else								      \
+	elf_ar_hdr->FIELD						      \
+	  = (__typeof (elf_ar_hdr->FIELD)) strtoll (string, NULL, 8);	      \
+    }									      \
+  while (0)
+
   INT_FIELD (ar_date);
   INT_FIELD (ar_uid);
   INT_FIELD (ar_gid);
-  INT_FIELD (ar_mode);
+  OCT_FIELD (ar_mode);
   INT_FIELD (ar_size);
 
   if (elf_ar_hdr->ar_size < 0)

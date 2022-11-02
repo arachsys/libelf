@@ -35,10 +35,8 @@
 #include <errno.h>
 #include <stddef.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "libelfP.h"
-#include <system.h>
 #include "common.h"
 #include "elf-knowledge.h"
 

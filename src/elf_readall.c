@@ -32,10 +32,8 @@
 #endif
 
 #include <errno.h>
-#include <unistd.h>
 #include <sys/stat.h>
 
-#include <system.h>
 #include "libelfP.h"
 #include "common.h"
 

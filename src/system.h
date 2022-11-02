@@ -35,20 +35,22 @@
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <sys/param.h>
-#include <endian.h>
-#include <byteswap.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#include <byteswap.h>
+#include <endian.h>
+#include <sys/mman.h>
+#include <sys/param.h>
+#include <unistd.h>
+
+#if BYTE_ORDER == LITTLE_ENDIAN
 # define LE32(n)	(n)
 # define LE64(n)	(n)
 # define BE32(n)	bswap_32 (n)
 # define BE64(n)	bswap_64 (n)
-#elif __BYTE_ORDER == __BIG_ENDIAN
+#elif BYTE_ORDER == BIG_ENDIAN
 # define BE32(n)	(n)
 # define BE64(n)	(n)
 # define LE32(n)	bswap_32 (n)

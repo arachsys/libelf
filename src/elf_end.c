@@ -34,7 +34,6 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <sys/mman.h>
 
 #include "libelfP.h"
 

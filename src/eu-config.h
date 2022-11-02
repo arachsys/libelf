@@ -52,6 +52,7 @@
 # define rwlock_unlock(lock) ((void) (lock))
 #endif	/* USE_LOCKS */
 
+#include <libintl.h>
 /* gettext helper macros.  */
 #define N_(Str) Str
 #define _(Str) dgettext ("elfutils", Str)

@@ -31,14 +31,12 @@
 #endif
 
 #include <libelf.h>
-#include <system.h>
 #include "libelfP.h"
 #include "common.h"
 
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <zlib.h>
 
 /* Cleanup and return result.  Don't leak memory.  */

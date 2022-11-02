@@ -30,9 +30,6 @@
 #ifndef _COMMON_H
 #define _COMMON_H       1
 
-#include <ar.h>
-#include <byteswap.h>
-#include <endian.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -154,7 +151,7 @@ libelf_release_all (Elf *elf)
 		 : bswap_64 (Var))))
 
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#if BYTE_ORDER == LITTLE_ENDIAN
 # define MY_ELFDATA	ELFDATA2LSB
 #else
 # define MY_ELFDATA	ELFDATA2MSB
