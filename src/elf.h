@@ -358,8 +358,9 @@ typedef struct
 
 #define EM_BPF		247	/* Linux BPF -- in-kernel virtual machine */
 #define EM_CSKY		252     /* C-SKY */
+#define EM_LOONGARCH	258	/* LoongArch */
 
-#define EM_NUM		253
+#define EM_NUM		259
 
 /* Old spellings/synonyms.  */
 
@@ -443,7 +444,8 @@ typedef struct
 #define SHT_PREINIT_ARRAY 16		/* Array of pre-constructors */
 #define SHT_GROUP	  17		/* Section group */
 #define SHT_SYMTAB_SHNDX  18		/* Extended section indices */
-#define	SHT_NUM		  19		/* Number of defined types.  */
+#define SHT_RELR	  19            /* RELR relative relocations */
+#define	SHT_NUM		  20		/* Number of defined types.  */
 #define SHT_LOOS	  0x60000000	/* Start OS-specific.  */
 #define SHT_GNU_ATTRIBUTES 0x6ffffff5	/* Object attributes.  */
 #define SHT_GNU_HASH	  0x6ffffff6	/* GNU-style hash table.  */
@@ -504,6 +506,7 @@ typedef struct
 
 /* Legal values for ch_type (compression algorithm).  */
 #define ELFCOMPRESS_ZLIB	1	   /* ZLIB/DEFLATE algorithm.  */
+#define ELFCOMPRESS_ZSTD	2	   /* Zstandard algorithm.  */
 #define ELFCOMPRESS_LOOS	0x60000000 /* Start of OS-specific.  */
 #define ELFCOMPRESS_HIOS	0x6fffffff /* End of OS-specific.  */
 #define ELFCOMPRESS_LOPROC	0x70000000 /* Start of processor-specific.  */
@@ -662,6 +665,11 @@ typedef struct
   Elf64_Sxword	r_addend;		/* Addend */
 } Elf64_Rela;
 
+/* RELR relocation table entry */
+
+typedef Elf32_Word	Elf32_Relr;
+typedef Elf64_Xword	Elf64_Relr;
+
 /* How to extract and insert information held in the r_info field.  */
 
 #define ELF32_R_SYM(val)		((val) >> 8)
@@ -801,6 +809,7 @@ typedef struct
 #define NT_S390_GS_BC	0x30c		/* s390 guarded storage
 					   broadcast control block.  */
 #define NT_S390_RI_CB	0x30d		/* s390 runtime instrumentation.  */
+#define NT_S390_PV_CPU_DATA	0x30e	/* s390 protvirt cpu dump data.  */
 #define NT_ARM_VFP	0x400		/* ARM VFP/NEON registers */
 #define NT_ARM_TLS	0x401		/* ARM TLS register */
 #define NT_ARM_HW_BREAK	0x402		/* ARM hardware breakpoint registers */
@@ -822,6 +831,15 @@ typedef struct
 #define NT_MIPS_DSP	0x800		/* MIPS DSP ASE registers.  */
 #define NT_MIPS_FP_MODE	0x801		/* MIPS floating-point mode.  */
 #define NT_MIPS_MSA	0x802		/* MIPS SIMD registers.  */
+#define NT_LOONGARCH_CPUCFG	0xa00	/* LoongArch CPU config registers.  */
+#define NT_LOONGARCH_CSR	0xa01	/* LoongArch control and
+					   status registers.  */
+#define NT_LOONGARCH_LSX	0xa02	/* LoongArch Loongson SIMD
+					   Extension registers.  */
+#define NT_LOONGARCH_LASX	0xa03	/* LoongArch Loongson Advanced
+					   SIMD Extension registers.  */
+#define NT_LOONGARCH_LBT	0xa04	/* LoongArch Loongson Binary
+					   Translation registers.  */
 
 /* Legal values for the note segment descriptor types for object files.  */
 
@@ -887,7 +905,10 @@ typedef struct
 #define DT_PREINIT_ARRAY 32		/* Array with addresses of preinit fct*/
 #define DT_PREINIT_ARRAYSZ 33		/* size in bytes of DT_PREINIT_ARRAY */
 #define DT_SYMTAB_SHNDX	34		/* Address of SYMTAB_SHNDX section */
-#define	DT_NUM		35		/* Number used */
+#define DT_RELRSZ	35		/* Total size of RELR relative relocations */
+#define DT_RELR		36		/* Address of RELR relative relocations */
+#define DT_RELRENT	37		/* Size of one RELR relative relocaction */
+#define	DT_NUM		38		/* Number used */
 #define DT_LOOS		0x6000000d	/* Start of OS-specific */
 #define DT_HIOS		0x6ffff000	/* End of OS-specific */
 #define DT_LOPROC	0x70000000	/* Start of processor-specific */
@@ -1044,7 +1065,8 @@ typedef struct
 
 /* Legal values for vd_flags (version information flags).  */
 #define VER_FLG_BASE	0x1		/* Version definition of file itself */
-#define VER_FLG_WEAK	0x2		/* Weak version identifier */
+#define VER_FLG_WEAK	0x2		/* Weak version identifier.  Also
+					   used by vna_flags below.  */
 
 /* Versym symbol index values.  */
 #define	VER_NDX_LOCAL		0	/* Symbol is local.  */
@@ -1120,10 +1142,6 @@ typedef struct
   Elf64_Word	vna_next;		/* Offset in bytes to next vernaux
 					   entry */
 } Elf64_Vernaux;
-
-
-/* Legal values for vna_flags.  */
-#define VER_FLG_WEAK	0x2		/* Weak version identifier */
 
 
 /* Auxiliary vector.  */
@@ -2893,6 +2911,9 @@ enum
 #define R_AARCH64_TLSDESC      1031	/* TLS Descriptor.  */
 #define R_AARCH64_IRELATIVE	1032	/* STT_GNU_IFUNC relocation.  */
 
+/* MTE memory tag segment type.  */
+#define PT_AARCH64_MEMTAG_MTE	(PT_LOPROC + 2)
+
 /* AArch64 specific values for the Dyn d_tag field.  */
 #define DT_AARCH64_BTI_PLT	(DT_LOPROC + 1)
 #define DT_AARCH64_PAC_PLT	(DT_LOPROC + 3)
@@ -3918,6 +3939,8 @@ enum
 #define EF_RISCV_FLOAT_ABI_SINGLE 	0x0002
 #define EF_RISCV_FLOAT_ABI_DOUBLE 	0x0004
 #define EF_RISCV_FLOAT_ABI_QUAD 	0x0006
+#define EF_RISCV_RVE			0x0008
+#define EF_RISCV_TSO			0x0010
 
 /* RISC-V relocations.  */
 #define R_RISCV_NONE		 0
@@ -3977,6 +4000,19 @@ enum
 #define R_RISCV_IRELATIVE	58
 
 #define R_RISCV_NUM		59
+
+/* RISC-V specific values for the st_other field.  */
+#define STO_RISCV_VARIANT_CC	0x80	/* Function uses variant calling
+					   convention */
+
+/* RISC-V specific values for the sh_type field.  */
+#define SHT_RISCV_ATTRIBUTES	(SHT_LOPROC + 3)
+
+/* RISC-V specific values for the p_type field.  */
+#define PT_RISCV_ATTRIBUTES	(PT_LOPROC + 3)
+
+/* RISC-V specific values for the d_tag field.  */
+#define DT_RISCV_VARIANT_CC	(DT_LOPROC + 1)
 
 /* BPF specific declarations.  */
 
@@ -4055,6 +4091,71 @@ enum
 #define R_NDS32_RELATIVE	42
 #define R_NDS32_TLS_TPOFF	102
 #define R_NDS32_TLS_DESC	119
+
+/* LoongArch ELF Flags */
+#define EF_LARCH_ABI    	0x07
+#define EF_LARCH_ABI_LP64D	0x03
+
+/* LoongArch specific dynamic relocations */
+#define R_LARCH_NONE		0
+#define R_LARCH_32		1
+#define R_LARCH_64		2
+#define R_LARCH_RELATIVE	3
+#define R_LARCH_COPY		4
+#define R_LARCH_JUMP_SLOT	5
+#define R_LARCH_TLS_DTPMOD32	6
+#define R_LARCH_TLS_DTPMOD64	7
+#define R_LARCH_TLS_DTPREL32	8
+#define R_LARCH_TLS_DTPREL64	9
+#define R_LARCH_TLS_TPREL32	10
+#define R_LARCH_TLS_TPREL64	11
+#define R_LARCH_IRELATIVE	12
+
+/* Reserved for future relocs that the dynamic linker must understand.  */
+
+/* used by the static linker for relocating .text.  */
+#define R_LARCH_MARK_LA  20
+#define R_LARCH_MARK_PCREL  21
+#define R_LARCH_SOP_PUSH_PCREL  22
+#define R_LARCH_SOP_PUSH_ABSOLUTE  23
+#define R_LARCH_SOP_PUSH_DUP  24
+#define R_LARCH_SOP_PUSH_GPREL  25
+#define R_LARCH_SOP_PUSH_TLS_TPREL  26
+#define R_LARCH_SOP_PUSH_TLS_GOT  27
+#define R_LARCH_SOP_PUSH_TLS_GD  28
+#define R_LARCH_SOP_PUSH_PLT_PCREL  29
+#define R_LARCH_SOP_ASSERT  30
+#define R_LARCH_SOP_NOT  31
+#define R_LARCH_SOP_SUB  32
+#define R_LARCH_SOP_SL  33
+#define R_LARCH_SOP_SR  34
+#define R_LARCH_SOP_ADD  35
+#define R_LARCH_SOP_AND  36
+#define R_LARCH_SOP_IF_ELSE  37
+#define R_LARCH_SOP_POP_32_S_10_5  38
+#define R_LARCH_SOP_POP_32_U_10_12  39
+#define R_LARCH_SOP_POP_32_S_10_12  40
+#define R_LARCH_SOP_POP_32_S_10_16  41
+#define R_LARCH_SOP_POP_32_S_10_16_S2  42
+#define R_LARCH_SOP_POP_32_S_5_20  43
+#define R_LARCH_SOP_POP_32_S_0_5_10_16_S2  44
+#define R_LARCH_SOP_POP_32_S_0_10_10_16_S2  45
+#define R_LARCH_SOP_POP_32_U  46
+
+/* used by the static linker for relocating non .text.  */
+#define R_LARCH_ADD8  47
+#define R_LARCH_ADD16  48
+#define R_LARCH_ADD24  49
+#define R_LARCH_ADD32  50
+#define R_LARCH_ADD64  51
+#define R_LARCH_SUB8  52
+#define R_LARCH_SUB16  53
+#define R_LARCH_SUB24  54
+#define R_LARCH_SUB32  55
+#define R_LARCH_SUB64  56
+#define R_LARCH_GNU_VTINHERIT  57
+#define R_LARCH_GNU_VTENTRY  58
+
 
 /* ARCompact/ARCv2 specific relocs.  */
 #define R_ARC_NONE		0x0

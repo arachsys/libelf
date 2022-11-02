@@ -35,9 +35,7 @@
 #include <errno.h>
 #include <gelf.h>
 #include <stddef.h>
-#include <unistd.h>
 
-#include <system.h>
 #include "libelfP.h"
 #include "common.h"
 

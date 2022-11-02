@@ -32,7 +32,6 @@
 #endif
 
 #include <assert.h>
-#include <endian.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
@@ -74,9 +73,9 @@ elfw2(LIBELFBITS,checksum) (Elf *elf)
      is the same.  */
   ident = elf->state.ELFW(elf,LIBELFBITS).ehdr->e_ident;
   same_byte_order = ((ident[EI_DATA] == ELFDATA2LSB
-		      && __BYTE_ORDER == __LITTLE_ENDIAN)
+		      && BYTE_ORDER == LITTLE_ENDIAN)
 		     || (ident[EI_DATA] == ELFDATA2MSB
-			 && __BYTE_ORDER == __BIG_ENDIAN));
+			 && BYTE_ORDER == BIG_ENDIAN));
 
   /* If we don't have native byte order, we will likely need to
      convert the data with xlate functions.  We do it upfront instead

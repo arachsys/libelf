@@ -35,7 +35,6 @@
 #include <gelf.h>
 #include <libelf.h>
 #include <nlist.h>
-#include <unistd.h>
 
 #include "libelfP.h"
 

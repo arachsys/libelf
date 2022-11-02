@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <system.h>
 
 /* Helper Macros to write 32 bit and 64 bit functions.  */
 #define __elfw2_(Bits, Name) __elf##Bits##_##Name

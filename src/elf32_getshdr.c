@@ -34,9 +34,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <unistd.h>
 
-#include <system.h>
 #include "libelfP.h"
 #include "common.h"
 
