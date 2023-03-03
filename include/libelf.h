@@ -64,6 +64,11 @@
  #define ELFCOMPRESS_HIPROC     0x7fffffff /* End of processor-specific.  */
 #endif
 
+#ifndef ELFCOMPRESS_ZSTD
+ /* So ZSTD compression can be used even with an old system elf.h.  */
+ #define ELFCOMPRESS_ZSTD       2          /* Zstandard algorithm.  */
+#endif
+
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)
 # define __nonnull_attribute__(...) __attribute__ ((__nonnull__ (__VA_ARGS__)))
 # define __deprecated_attribute__ __attribute__ ((__deprecated__))
@@ -348,10 +353,10 @@ extern Elf64_Chdr *elf64_getchdr (Elf_Scn *__scn);
 
    elf_compress takes a compression type that should be either zero to
    decompress or an ELFCOMPRESS algorithm to use for compression.
-   Currently only ELFCOMPRESS_ZLIB is supported.  elf_compress_gnu
-   will compress in the traditional GNU compression format when
-   compress is one and decompress the section data when compress is
-   zero.
+   Currently ELFCOMPRESS_ZLIB and ELFCOMPRESS_ZSTD are supported.
+   elf_compress_gnu will compress in the traditional GNU compression
+   format when compress is one and decompress the section data when
+   compress is zero.
 
    The FLAGS argument can be zero or ELF_CHF_FORCE.  If FLAGS contains
    ELF_CHF_FORCE then it will always compress the section, even if

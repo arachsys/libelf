@@ -574,10 +574,10 @@ extern uint32_t __libelf_crc32 (uint32_t crc, unsigned char *buf, size_t len)
 
 extern void * __libelf_compress (Elf_Scn *scn, size_t hsize, int ei_data,
 				 size_t *orig_size, size_t *orig_addralign,
-				 size_t *size, bool force)
+				 size_t *size, bool force, bool use_zstd)
      internal_function;
 
-extern void * __libelf_decompress (void *buf_in, size_t size_in,
+extern void * __libelf_decompress (int chtype, void *buf_in, size_t size_in,
 				   size_t size_out) internal_function;
 extern void * __libelf_decompress_elf (Elf_Scn *scn,
 				       size_t *size_out, size_t *addralign)

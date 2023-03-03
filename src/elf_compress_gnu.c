@@ -103,7 +103,8 @@ elf_compress_gnu (Elf_Scn *scn, int inflate, unsigned int flags)
       size_t orig_size, new_size, orig_addralign;
       void *out_buf = __libelf_compress (scn, hsize, elfdata,
 					 &orig_size, &orig_addralign,
-					 &new_size, force);
+					 &new_size, force,
+					 /* use_zstd */ false);
 
       /* Compression would make section larger, don't change anything.  */
       if (out_buf == (void *) -1)
@@ -178,7 +179,7 @@ elf_compress_gnu (Elf_Scn *scn, int inflate, unsigned int flags)
       size_t size = gsize;
       size_t size_in = data->d_size - hsize;
       void *buf_in = data->d_buf + hsize;
-      void *buf_out = __libelf_decompress (buf_in, size_in, size);
+      void *buf_out = __libelf_decompress (ELFCOMPRESS_ZLIB, buf_in, size_in, size);
       if (buf_out == NULL)
 	return -1;
 
