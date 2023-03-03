@@ -1,5 +1,6 @@
 /* Conversion functions for versioning information.
    Copyright (C) 2006, 2007 Red Hat, Inc.
+   Copyright (C) 2023, Mark J. Wielaard <mark@klomp.org>
    This file is part of elfutils.
    Written by Ulrich Drepper <drepper@redhat.com>, 2006.
 
@@ -36,6 +37,7 @@
 static void
 elf_cvt_gnuhash (void *dest, const void *src, size_t len, int encode)
 {
+  size_t size = len;
   /* The GNU hash table format on 64 bit machines mixes 32 bit and 64 bit
      words.  We must detangle them here.   */
   Elf32_Word *dest32 = dest;
@@ -45,7 +47,7 @@ elf_cvt_gnuhash (void *dest, const void *src, size_t len, int encode)
   for (unsigned int cnt = 0; cnt < 4; ++cnt)
     {
       if (len < 4)
-	return;
+	goto done;
       dest32[cnt] = bswap_32 (src32[cnt]);
       len -= 4;
     }
@@ -58,7 +60,7 @@ elf_cvt_gnuhash (void *dest, const void *src, size_t len, int encode)
   for (unsigned int cnt = 0; cnt < bitmask_words; ++cnt)
     {
       if (len < 8)
-	return;
+	goto done;
       dest64[cnt] = bswap_64 (src64[cnt]);
       len -= 8;
     }
@@ -71,4 +73,10 @@ elf_cvt_gnuhash (void *dest, const void *src, size_t len, int encode)
       *dest32++ = bswap_32 (*src32++);
       len -= 4;
     }
+
+ done:
+  /* If there are any bytes left, we weren't able to convert the
+     partial structures, just copy them over. */
+  if (len > 0)
+    memmove (dest + size - len, src + size - len, len);
 }

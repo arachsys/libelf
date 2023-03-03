@@ -39,7 +39,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-/* System dependend headers */
+/* System dependent headers */
 #include <byteswap.h>
 #include <endian.h>
 #include <sys/mman.h>

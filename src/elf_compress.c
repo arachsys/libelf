@@ -39,6 +39,10 @@
 #include <string.h>
 #include <zlib.h>
 
+#ifdef USE_ZSTD
+#include <zstd.h>
+#endif
+
 /* Cleanup and return result.  Don't leak memory.  */
 static void *
 do_deflate_cleanup (void *result, z_stream *z, void *out_buf,
@@ -54,53 +58,14 @@ do_deflate_cleanup (void *result, z_stream *z, void *out_buf,
 #define deflate_cleanup(result, cdata) \
     do_deflate_cleanup(result, &z, out_buf, cdata)
 
-/* Given a section, uses the (in-memory) Elf_Data to extract the
-   original data size (including the given header size) and data
-   alignment.  Returns a buffer that has at least hsize bytes (for the
-   caller to fill in with a header) plus zlib compressed date.  Also
-   returns the new buffer size in new_size (hsize + compressed data
-   size).  Returns (void *) -1 when FORCE is false and the compressed
-   data would be bigger than the original data.  */
+static
 void *
-internal_function
-__libelf_compress (Elf_Scn *scn, size_t hsize, int ei_data,
-		   size_t *orig_size, size_t *orig_addralign,
-		   size_t *new_size, bool force)
+__libelf_compress_zlib (Elf_Scn *scn, size_t hsize, int ei_data,
+			size_t *orig_size, size_t *orig_addralign,
+			size_t *new_size, bool force,
+			Elf_Data *data, Elf_Data *next_data,
+			void *out_buf, size_t out_size, size_t block)
 {
-  /* The compressed data is the on-disk data.  We simplify the
-     implementation a bit by asking for the (converted) in-memory
-     data (which might be all there is if the user created it with
-     elf_newdata) and then convert back to raw if needed before
-     compressing.  Should be made a bit more clever to directly
-     use raw if that is directly available.  */
-  Elf_Data *data = elf_getdata (scn, NULL);
-  if (data == NULL)
-    return NULL;
-
-  /* When not forced and we immediately know we would use more data by
-     compressing, because of the header plus zlib overhead (five bytes
-     per 16 KB block, plus a one-time overhead of six bytes for the
-     entire stream), don't do anything.  */
-  Elf_Data *next_data = elf_getdata (scn, data);
-  if (next_data == NULL && !force
-      && data->d_size <= hsize + 5 + 6)
-    return (void *) -1;
-
-  *orig_addralign = data->d_align;
-  *orig_size = data->d_size;
-
-  /* Guess an output block size. 1/8th of the original Elf_Data plus
-     hsize.  Make the first chunk twice that size (25%), then increase
-     by a block (12.5%) when necessary.  */
-  size_t block = (data->d_size / 8) + hsize;
-  size_t out_size = 2 * block;
-  void *out_buf = malloc (out_size);
-  if (out_buf == NULL)
-    {
-      __libelf_seterrno (ELF_E_NOMEM);
-      return NULL;
-    }
-
   /* Caller gets to fill in the header at the start.  Just skip it here.  */
   size_t used = hsize;
 
@@ -205,9 +170,189 @@ __libelf_compress (Elf_Scn *scn, size_t hsize, int ei_data,
   return out_buf;
 }
 
+#ifdef USE_ZSTD_COMPRESS
+/* Cleanup and return result.  Don't leak memory.  */
+static void *
+do_zstd_cleanup (void *result, ZSTD_CCtx * const cctx, void *out_buf,
+		 Elf_Data *cdatap)
+{
+  ZSTD_freeCCtx (cctx);
+  free (out_buf);
+  if (cdatap != NULL)
+    free (cdatap->d_buf);
+  return result;
+}
+
+#define zstd_cleanup(result, cdata) \
+    do_zstd_cleanup(result, cctx, out_buf, cdata)
+
+static
+void *
+__libelf_compress_zstd (Elf_Scn *scn, size_t hsize, int ei_data,
+			size_t *orig_size, size_t *orig_addralign,
+			size_t *new_size, bool force,
+			Elf_Data *data, Elf_Data *next_data,
+			void *out_buf, size_t out_size, size_t block)
+{
+  /* Caller gets to fill in the header at the start.  Just skip it here.  */
+  size_t used = hsize;
+
+  ZSTD_CCtx* const cctx = ZSTD_createCCtx();
+  Elf_Data cdata;
+  cdata.d_buf = NULL;
+
+  /* Loop over data buffers.  */
+  ZSTD_EndDirective mode = ZSTD_e_continue;
+
+  do
+    {
+      /* Convert to raw if different endianness.  */
+      cdata = *data;
+      bool convert = ei_data != MY_ELFDATA && data->d_size > 0;
+      if (convert)
+	{
+	  /* Don't do this conversion in place, we might want to keep
+	     the original data around, caller decides.  */
+	  cdata.d_buf = malloc (data->d_size);
+	  if (cdata.d_buf == NULL)
+	    {
+	      __libelf_seterrno (ELF_E_NOMEM);
+	      return zstd_cleanup (NULL, NULL);
+	    }
+	  if (gelf_xlatetof (scn->elf, &cdata, data, ei_data) == NULL)
+	    return zstd_cleanup (NULL, &cdata);
+	}
+
+      ZSTD_inBuffer ib = { cdata.d_buf, cdata.d_size, 0 };
+
+      /* Get next buffer to see if this is the last one.  */
+      data = next_data;
+      if (data != NULL)
+	{
+	  *orig_addralign = MAX (*orig_addralign, data->d_align);
+	  *orig_size += data->d_size;
+	  next_data = elf_getdata (scn, data);
+	}
+      else
+	mode = ZSTD_e_end;
+
+      /* Flush one data buffer.  */
+      for (;;)
+	{
+	  ZSTD_outBuffer ob = { out_buf + used, out_size - used, 0 };
+	  size_t ret = ZSTD_compressStream2 (cctx, &ob, &ib, mode);
+	  if (ZSTD_isError (ret))
+	    {
+	      __libelf_seterrno (ELF_E_COMPRESS_ERROR);
+	      return zstd_cleanup (NULL, convert ? &cdata : NULL);
+	    }
+	  used += ob.pos;
+
+	  /* Bail out if we are sure the user doesn't want the
+	     compression forced and we are using more compressed data
+	     than original data.  */
+	  if (!force && mode == ZSTD_e_end && used >= *orig_size)
+	    return zstd_cleanup ((void *) -1, convert ? &cdata : NULL);
+
+	  if (ret > 0)
+	    {
+	      void *bigger = realloc (out_buf, out_size + block);
+	      if (bigger == NULL)
+		{
+		  __libelf_seterrno (ELF_E_NOMEM);
+		  return zstd_cleanup (NULL, convert ? &cdata : NULL);
+		}
+	      out_buf = bigger;
+	      out_size += block;
+	    }
+	  else
+	    break;
+	}
+
+      if (convert)
+	{
+	  free (cdata.d_buf);
+	  cdata.d_buf = NULL;
+	}
+    }
+  while (mode != ZSTD_e_end); /* More data blocks.  */
+
+  ZSTD_freeCCtx (cctx);
+  *new_size = used;
+  return out_buf;
+}
+#endif
+
+/* Given a section, uses the (in-memory) Elf_Data to extract the
+   original data size (including the given header size) and data
+   alignment.  Returns a buffer that has at least hsize bytes (for the
+   caller to fill in with a header) plus zlib compressed date.  Also
+   returns the new buffer size in new_size (hsize + compressed data
+   size).  Returns (void *) -1 when FORCE is false and the compressed
+   data would be bigger than the original data.  */
 void *
 internal_function
-__libelf_decompress (void *buf_in, size_t size_in, size_t size_out)
+__libelf_compress (Elf_Scn *scn, size_t hsize, int ei_data,
+		   size_t *orig_size, size_t *orig_addralign,
+		   size_t *new_size, bool force, bool use_zstd)
+{
+  /* The compressed data is the on-disk data.  We simplify the
+     implementation a bit by asking for the (converted) in-memory
+     data (which might be all there is if the user created it with
+     elf_newdata) and then convert back to raw if needed before
+     compressing.  Should be made a bit more clever to directly
+     use raw if that is directly available.  */
+  Elf_Data *data = elf_getdata (scn, NULL);
+  if (data == NULL)
+    return NULL;
+
+  /* When not forced and we immediately know we would use more data by
+     compressing, because of the header plus zlib overhead (five bytes
+     per 16 KB block, plus a one-time overhead of six bytes for the
+     entire stream), don't do anything.
+     Size estimation for ZSTD compression would be similar.  */
+  Elf_Data *next_data = elf_getdata (scn, data);
+  if (next_data == NULL && !force
+      && data->d_size <= hsize + 5 + 6)
+    return (void *) -1;
+
+  *orig_addralign = data->d_align;
+  *orig_size = data->d_size;
+
+  /* Guess an output block size. 1/8th of the original Elf_Data plus
+     hsize.  Make the first chunk twice that size (25%), then increase
+     by a block (12.5%) when necessary.  */
+  size_t block = (data->d_size / 8) + hsize;
+  size_t out_size = 2 * block;
+  void *out_buf = malloc (out_size);
+  if (out_buf == NULL)
+    {
+      __libelf_seterrno (ELF_E_NOMEM);
+      return NULL;
+    }
+
+  if (use_zstd)
+    {
+#ifdef USE_ZSTD_COMPRESS
+      return __libelf_compress_zstd (scn, hsize, ei_data, orig_size,
+				   orig_addralign, new_size, force,
+				   data, next_data, out_buf, out_size,
+				   block);
+#else
+    __libelf_seterrno (ELF_E_UNKNOWN_COMPRESSION_TYPE);
+    return NULL;
+#endif
+    }
+  else
+    return __libelf_compress_zlib (scn, hsize, ei_data, orig_size,
+				   orig_addralign, new_size, force,
+				   data, next_data, out_buf, out_size,
+				   block);
+}
+
+void *
+internal_function
+__libelf_decompress_zlib (void *buf_in, size_t size_in, size_t size_out)
 {
   /* Catch highly unlikely compression ratios so we don't allocate
      some giant amount of memory for nothing. The max compression
@@ -218,7 +363,7 @@ __libelf_decompress (void *buf_in, size_t size_in, size_t size_out)
       return NULL;
     }
 
-  /* Malloc might return NULL when requestion zero size.  This is highly
+  /* Malloc might return NULL when requesting zero size.  This is highly
      unlikely, it would only happen when the compression was forced.
      But we do need a non-NULL buffer to return and set as result.
      Just make sure to always allocate at least 1 byte.  */
@@ -260,6 +405,50 @@ __libelf_decompress (void *buf_in, size_t size_in, size_t size_out)
   return buf_out;
 }
 
+#ifdef USE_ZSTD
+static void *
+__libelf_decompress_zstd (void *buf_in, size_t size_in, size_t size_out)
+{
+  /* Malloc might return NULL when requesting zero size.  This is highly
+     unlikely, it would only happen when the compression was forced.
+     But we do need a non-NULL buffer to return and set as result.
+     Just make sure to always allocate at least 1 byte.  */
+  void *buf_out = malloc (size_out ?: 1);
+  if (unlikely (buf_out == NULL))
+    {
+      __libelf_seterrno (ELF_E_NOMEM);
+      return NULL;
+    }
+
+  size_t ret = ZSTD_decompress (buf_out, size_out, buf_in, size_in);
+  if (ZSTD_isError (ret))
+    {
+      free (buf_out);
+      __libelf_seterrno (ELF_E_DECOMPRESS_ERROR);
+      return NULL;
+    }
+  else
+    return buf_out;
+}
+#endif
+
+void *
+internal_function
+__libelf_decompress (int chtype, void *buf_in, size_t size_in, size_t size_out)
+{
+  if (chtype == ELFCOMPRESS_ZLIB)
+    return __libelf_decompress_zlib (buf_in, size_in, size_out);
+  else
+    {
+#ifdef USE_ZSTD
+    return __libelf_decompress_zstd (buf_in, size_in, size_out);
+#else
+    __libelf_seterrno (ELF_E_UNKNOWN_COMPRESSION_TYPE);
+    return NULL;
+#endif
+    }
+}
+
 void *
 internal_function
 __libelf_decompress_elf (Elf_Scn *scn, size_t *size_out, size_t *addralign)
@@ -268,7 +457,19 @@ __libelf_decompress_elf (Elf_Scn *scn, size_t *size_out, size_t *addralign)
   if (gelf_getchdr (scn, &chdr) == NULL)
     return NULL;
 
+  bool unknown_compression = false;
   if (chdr.ch_type != ELFCOMPRESS_ZLIB)
+    {
+      if (chdr.ch_type != ELFCOMPRESS_ZSTD)
+	unknown_compression = true;
+
+#ifndef USE_ZSTD
+      if (chdr.ch_type == ELFCOMPRESS_ZSTD)
+	unknown_compression = true;
+#endif
+    }
+
+  if (unknown_compression)
     {
       __libelf_seterrno (ELF_E_UNKNOWN_COMPRESSION_TYPE);
       return NULL;
@@ -295,7 +496,9 @@ __libelf_decompress_elf (Elf_Scn *scn, size_t *size_out, size_t *addralign)
 		  ? sizeof (Elf32_Chdr) : sizeof (Elf64_Chdr));
   size_t size_in = data->d_size - hsize;
   void *buf_in = data->d_buf + hsize;
-  void *buf_out = __libelf_decompress (buf_in, size_in, chdr.ch_size);
+  void *buf_out
+    = __libelf_decompress (chdr.ch_type, buf_in, size_in, chdr.ch_size);
+
   *size_out = chdr.ch_size;
   *addralign = chdr.ch_addralign;
   return buf_out;
@@ -394,7 +597,7 @@ elf_compress (Elf_Scn *scn, int type, unsigned int flags)
     }
 
   int compressed = (sh_flags & SHF_COMPRESSED);
-  if (type == ELFCOMPRESS_ZLIB)
+  if (type == ELFCOMPRESS_ZLIB || type == ELFCOMPRESS_ZSTD)
     {
       /* Compress/Deflate.  */
       if (compressed == 1)
@@ -408,7 +611,8 @@ elf_compress (Elf_Scn *scn, int type, unsigned int flags)
       size_t orig_size, orig_addralign, new_size;
       void *out_buf = __libelf_compress (scn, hsize, elfdata,
 					 &orig_size, &orig_addralign,
-					 &new_size, force);
+					 &new_size, force,
+					 type == ELFCOMPRESS_ZSTD);
 
       /* Compression would make section larger, don't change anything.  */
       if (out_buf == (void *) -1)
@@ -422,7 +626,7 @@ elf_compress (Elf_Scn *scn, int type, unsigned int flags)
       if (elfclass == ELFCLASS32)
 	{
 	  Elf32_Chdr chdr;
-	  chdr.ch_type = ELFCOMPRESS_ZLIB;
+	  chdr.ch_type = type;
 	  chdr.ch_size = orig_size;
 	  chdr.ch_addralign = orig_addralign;
 	  if (elfdata != MY_ELFDATA)
@@ -436,7 +640,7 @@ elf_compress (Elf_Scn *scn, int type, unsigned int flags)
       else
 	{
 	  Elf64_Chdr chdr;
-	  chdr.ch_type = ELFCOMPRESS_ZLIB;
+	  chdr.ch_type = type;
 	  chdr.ch_reserved = 0;
 	  chdr.ch_size = orig_size;
 	  chdr.ch_addralign = sh_addralign;
