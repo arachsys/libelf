@@ -3,10 +3,10 @@ LIBDIR = $(PREFIX)/lib
 
 CFLAGS = -O2 -Wall
 LDFLAGS =
-LDLIBS = -lz
+LDLIBS = -lz -lzstd
 
 MAJOR = 1
-MINOR = 0.187
+MINOR = 0.189
 
 HEADERS = $(wildcard include/*.h src/*.h)
 SOURCES = $(wildcard src/*.c)
