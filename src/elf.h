@@ -1,5 +1,5 @@
 /* This file defines standard ELF types, structures, and macros.
-   Copyright (C) 1995-2022 Free Software Foundation, Inc.
+   Copyright (C) 1995-2023 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -210,7 +210,7 @@ typedef struct
 #define EM_68HC12	53	/* Motorola M68HC12 */
 #define EM_MMA		54	/* Fujitsu MMA Multimedia Accelerator */
 #define EM_PCP		55	/* Siemens PCP */
-#define EM_NCPU		56	/* Sony nCPU embeeded RISC */
+#define EM_NCPU		56	/* Sony nCPU embedded RISC */
 #define EM_NDR1		57	/* Denso NDR1 microprocessor */
 #define EM_STARCORE	58	/* Motorola Start*Core processor */
 #define EM_ME16		59	/* Toyota ME16 processor */
@@ -559,7 +559,7 @@ typedef struct
 
 /* Possible bitmasks for si_flags.  */
 #define SYMINFO_FLG_DIRECT	0x0001	/* Direct bound symbol */
-#define SYMINFO_FLG_PASSTHRU	0x0002	/* Pass-thru symbol for translator */
+#define SYMINFO_FLG_PASSTHRU	0x0002	/* Pass-through symbol for translator */
 #define SYMINFO_FLG_COPY	0x0004	/* Symbol is a copy-reloc */
 #define SYMINFO_FLG_LAZYLOAD	0x0008	/* Symbol bound to object to be lazy
 					   loaded */
@@ -728,6 +728,7 @@ typedef struct
 #define PT_GNU_STACK	0x6474e551	/* Indicates stack executability */
 #define PT_GNU_RELRO	0x6474e552	/* Read-only after relocation */
 #define PT_GNU_PROPERTY	0x6474e553	/* GNU property */
+#define PT_GNU_SFRAME	0x6474e554	/* SFrame segment.  */
 #define PT_LOSUNW	0x6ffffffa
 #define PT_SUNWBSS	0x6ffffffa	/* Sun Specific segment */
 #define PT_SUNWSTACK	0x6ffffffb	/* Stack segment */
@@ -1223,6 +1224,9 @@ typedef struct
 #define AT_HWCAP2	26		/* More machine-dependent hints about
 					   processor capabilities.  */
 
+#define AT_RSEQ_FEATURE_SIZE	27	/* rseq supported feature size.  */
+#define AT_RSEQ_ALIGN	28		/* rseq allocation alignment.  */
+
 #define AT_EXECFN	31		/* Filename of executable.  */
 
 /* Pointer to the global system page used for system calls and other
@@ -1681,11 +1685,25 @@ typedef struct
 #define EF_MIPS_PIC		2     /* Contains PIC code.  */
 #define EF_MIPS_CPIC		4     /* Uses PIC calling sequence.  */
 #define EF_MIPS_XGOT		8
-#define EF_MIPS_64BIT_WHIRL	16
+#define EF_MIPS_UCODE		16
 #define EF_MIPS_ABI2		32
 #define EF_MIPS_ABI_ON32	64
+#define EF_MIPS_OPTIONS_FIRST	0x00000080 /* Process the .MIPS.options
+					      section first by ld.  */
+#define EF_MIPS_32BITMODE	0x00000100 /* Indicates code compiled for
+					      a 64-bit machine in 32-bit
+					      mode (regs are 32-bits
+					      wide).  */
 #define EF_MIPS_FP64		512  /* Uses FP64 (12 callee-saved).  */
 #define EF_MIPS_NAN2008	1024  /* Uses IEEE 754-2008 NaN encoding.  */
+#define EF_MIPS_ARCH_ASE	0x0f000000 /* Architectural Extensions
+					      used by this file.  */
+#define EF_MIPS_ARCH_ASE_MDMX	0x08000000 /* Use MDMX multimedia
+					      extensions.  */
+#define EF_MIPS_ARCH_ASE_M16	0x04000000 /* Use MIPS-16 ISA
+					      extensions.  */
+#define EF_MIPS_ARCH_ASE_MICROMIPS	0x02000000 /* Use MICROMIPS ISA
+						      extensions.  */
 #define EF_MIPS_ARCH		0xf0000000 /* MIPS architecture level.  */
 
 /* Legal values for MIPS architecture level.  */
@@ -1699,6 +1717,38 @@ typedef struct
 #define EF_MIPS_ARCH_64		0x60000000 /* MIPS64 code.  */
 #define EF_MIPS_ARCH_32R2	0x70000000 /* MIPS32r2 code.  */
 #define EF_MIPS_ARCH_64R2	0x80000000 /* MIPS64r2 code.  */
+#define EF_MIPS_ARCH_32R6	0x90000000 /* MIPS32r6 code.  */
+#define EF_MIPS_ARCH_64R6	0xa0000000 /* MIPS64r6 code.  */
+#define EF_MIPS_ABI		0x0000F000 /* The ABI of the file.  Also
+					      see EF_MIPS_ABI2 above.  */
+#define EF_MIPS_ABI_O32		0x00001000 /* The original o32 abi.  */
+#define EF_MIPS_ABI_O64		0x00002000 /* O32 extended to work on
+					      64 bit architectures.  */
+#define EF_MIPS_ABI_EABI32	0x00003000 /* EABI in 32 bit mode.  */
+#define EF_MIPS_ABI_EABI64	0x00004000 /* EABI in 64 bit mode.  */
+#define EF_MIPS_MACH		0x00FF0000
+#define EF_MIPS_MACH_3900	0x00810000
+#define EF_MIPS_MACH_4010	0x00820000
+#define EF_MIPS_MACH_4100	0x00830000
+#define EF_MIPS_MACH_ALLEGREX	0x00840000
+#define EF_MIPS_MACH_4650	0x00850000
+#define EF_MIPS_MACH_4120	0x00870000
+#define EF_MIPS_MACH_4111	0x00880000
+#define EF_MIPS_MACH_SB1	0x008a0000
+#define EF_MIPS_MACH_OCTEON	0x008b0000
+#define EF_MIPS_MACH_XLR	0x008c0000
+#define EF_MIPS_MACH_OCTEON2	0x008d0000
+#define EF_MIPS_MACH_OCTEON3	0x008e0000
+#define EF_MIPS_MACH_5400	0x00910000
+#define EF_MIPS_MACH_5900	0x00920000
+#define EF_MIPS_MACH_IAMR2	0x00930000
+#define EF_MIPS_MACH_5500	0x00980000
+#define EF_MIPS_MACH_9000	0x00990000
+#define EF_MIPS_MACH_LS2E	0x00A00000
+#define EF_MIPS_MACH_LS2F	0x00A10000
+#define EF_MIPS_MACH_GS464	0x00A20000
+#define EF_MIPS_MACH_GS464E	0x00A30000
+#define EF_MIPS_MACH_GS264E	0x00A40000
 
 /* The following are unofficial names and should not be used.  */
 
@@ -1759,6 +1809,7 @@ typedef struct
 #define SHT_MIPS_EH_REGION	0x70000027
 #define SHT_MIPS_XLATE_OLD	0x70000028
 #define SHT_MIPS_PDR_EXCEPTION	0x70000029
+#define SHT_MIPS_ABIFLAGS	0x7000002a
 #define SHT_MIPS_XHASH		0x7000002b
 
 /* Legal values for sh_flags field of Elf32_Shdr.  */
@@ -1927,10 +1978,68 @@ typedef struct
 #define R_MIPS_TLS_TPREL_HI16	49	/* TP-relative offset, high 16 bits */
 #define R_MIPS_TLS_TPREL_LO16	50	/* TP-relative offset, low 16 bits */
 #define R_MIPS_GLOB_DAT		51
+#define R_MIPS_PC21_S2		60
+#define R_MIPS_PC26_S2		61
+#define R_MIPS_PC18_S3		62
+#define R_MIPS_PC19_S2		63
+#define R_MIPS_PCHI16		64
+#define R_MIPS_PCLO16		65
+#define R_MIPS16_26		100
+#define R_MIPS16_GPREL		101
+#define R_MIPS16_GOT16		102
+#define R_MIPS16_CALL16		103
+#define R_MIPS16_HI16		104
+#define R_MIPS16_LO16		105
+#define R_MIPS16_TLS_GD		106
+#define R_MIPS16_TLS_LDM	107
+#define R_MIPS16_TLS_DTPREL_HI16	108
+#define R_MIPS16_TLS_DTPREL_LO16	109
+#define R_MIPS16_TLS_GOTTPREL	110
+#define R_MIPS16_TLS_TPREL_HI16	111
+#define R_MIPS16_TLS_TPREL_LO16	112
+#define R_MIPS16_PC16_S1	113
 #define R_MIPS_COPY		126
 #define R_MIPS_JUMP_SLOT        127
+#define R_MIPS_RELATIVE		128
+#define R_MICROMIPS_26_S1	133
+#define R_MICROMIPS_HI16	134
+#define R_MICROMIPS_LO16	135
+#define R_MICROMIPS_GPREL16	136
+#define R_MICROMIPS_LITERAL	137
+#define R_MICROMIPS_GOT16	138
+#define R_MICROMIPS_PC7_S1	139
+#define R_MICROMIPS_PC10_S1	140
+#define R_MICROMIPS_PC16_S1	141
+#define R_MICROMIPS_CALL16	142
+#define R_MICROMIPS_GOT_DISP	145
+#define R_MICROMIPS_GOT_PAGE	146
+#define R_MICROMIPS_GOT_OFST	147
+#define R_MICROMIPS_GOT_HI16	148
+#define R_MICROMIPS_GOT_LO16	149
+#define R_MICROMIPS_SUB		150
+#define R_MICROMIPS_HIGHER	151
+#define R_MICROMIPS_HIGHEST	152
+#define R_MICROMIPS_CALL_HI16	153
+#define R_MICROMIPS_CALL_LO16	154
+#define R_MICROMIPS_SCN_DISP	155
+#define R_MICROMIPS_JALR	156
+#define R_MICROMIPS_HI0_LO16	157
+#define R_MICROMIPS_TLS_GD	162
+#define R_MICROMIPS_TLS_LDM	163
+#define R_MICROMIPS_TLS_DTPREL_HI16	164
+#define R_MICROMIPS_TLS_DTPREL_LO16	165
+#define R_MICROMIPS_TLS_GOTTPREL	166
+#define R_MICROMIPS_TLS_TPREL_HI16	169
+#define R_MICROMIPS_TLS_TPREL_LO16	170
+#define R_MICROMIPS_GPREL7_S2	172
+#define R_MICROMIPS_PC23_S2	173
+#define R_MIPS_PC32		248
+#define R_MIPS_EH		249
+#define R_MIPS_GNU_REL16_S2	250
+#define R_MIPS_GNU_VTINHERIT	253
+#define R_MIPS_GNU_VTENTRY	254
 /* Keep this the last entry.  */
-#define R_MIPS_NUM		128
+#define R_MIPS_NUM		255
 
 /* Legal values for p_type field of Elf32_Phdr.  */
 
@@ -3998,8 +4107,11 @@ enum
 #define R_RISCV_SET32		56
 #define R_RISCV_32_PCREL	57
 #define R_RISCV_IRELATIVE	58
+#define R_RISCV_PLT32		59
+#define R_RISCV_SET_ULEB128	60
+#define R_RISCV_SUB_ULEB128	61
 
-#define R_RISCV_NUM		59
+#define R_RISCV_NUM		62
 
 /* RISC-V specific values for the st_other field.  */
 #define STO_RISCV_VARIANT_CC	0x80	/* Function uses variant calling
@@ -4158,6 +4270,55 @@ enum
 #define R_LARCH_SUB64  56
 #define R_LARCH_GNU_VTINHERIT  57
 #define R_LARCH_GNU_VTENTRY  58
+
+/* reserved 59-63 */
+
+#define R_LARCH_B16 64
+#define R_LARCH_B21 65
+#define R_LARCH_B26 66
+#define R_LARCH_ABS_HI20 67
+#define R_LARCH_ABS_LO12 68
+#define R_LARCH_ABS64_LO20 69
+#define R_LARCH_ABS64_HI12 70
+#define R_LARCH_PCALA_HI20 71
+#define R_LARCH_PCALA_LO12 72
+#define R_LARCH_PCALA64_LO20 73
+#define R_LARCH_PCALA64_HI12 74
+#define R_LARCH_GOT_PC_HI20 75
+#define R_LARCH_GOT_PC_LO12 76
+#define R_LARCH_GOT64_PC_LO20 77
+#define R_LARCH_GOT64_PC_HI12 78
+#define R_LARCH_GOT_HI20 79
+#define R_LARCH_GOT_LO12 80
+#define R_LARCH_GOT64_LO20 81
+#define R_LARCH_GOT64_HI12 82
+#define R_LARCH_TLS_LE_HI20 83
+#define R_LARCH_TLS_LE_LO12 84
+#define R_LARCH_TLS_LE64_LO20 85
+#define R_LARCH_TLS_LE64_HI12 86
+#define R_LARCH_TLS_IE_PC_HI20 87
+#define R_LARCH_TLS_IE_PC_LO12 88
+#define R_LARCH_TLS_IE64_PC_LO20 89
+#define R_LARCH_TLS_IE64_PC_HI12 90
+#define R_LARCH_TLS_IE_HI20 91
+#define R_LARCH_TLS_IE_LO12 92
+#define R_LARCH_TLS_IE64_LO20 93
+#define R_LARCH_TLS_IE64_HI12 94
+#define R_LARCH_TLS_LD_PC_HI20 95
+#define R_LARCH_TLS_LD_HI20 96
+#define R_LARCH_TLS_GD_PC_HI20 97
+#define R_LARCH_TLS_GD_HI20 98
+#define R_LARCH_32_PCREL 99
+#define R_LARCH_RELAX 100
+#define R_LARCH_DELETE 101
+#define R_LARCH_ALIGN 102
+#define R_LARCH_PCREL20_S2 103
+#define R_LARCH_CFA 104
+#define R_LARCH_ADD6 105
+#define R_LARCH_SUB6 106
+#define R_LARCH_ADD_ULEB128 107
+#define R_LARCH_SUB_ULEB128 108
+#define R_LARCH_64_PCREL 109
 
 /* ARC specific declarations.  */
 

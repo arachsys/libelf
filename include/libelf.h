@@ -69,6 +69,19 @@
  #define ELFCOMPRESS_ZSTD       2          /* Zstandard algorithm.  */
 #endif
 
+#ifndef SHT_RELR
+ /* So RELR defines/typedefs can be used even with an old system elf.h.  */
+ #define SHT_RELR       19      /* RELR relative relocations */
+
+ /* RELR relocation table entry */
+ typedef Elf32_Word     Elf32_Relr;
+ typedef Elf64_Xword    Elf64_Relr;
+
+ #define DT_RELRSZ      35      /* Total size of RELR relative relocations */
+ #define DT_RELR        36      /* Address of RELR relative relocations */
+ #define DT_RELRENT     37      /* Size of one RELR relative relocaction */
+#endif
+
 #if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3)
 # define __nonnull_attribute__(...) __attribute__ ((__nonnull__ (__VA_ARGS__)))
 # define __deprecated_attribute__ __attribute__ ((__deprecated__))
@@ -124,6 +137,7 @@ typedef enum
   ELF_T_CHDR,			/* Compressed, Elf32_Chdr, Elf64_Chdr, ... */
   ELF_T_NHDR8,			/* Special GNU Properties note.  Same as Nhdr,
 				   except padding.  */
+  ELF_T_RELR,			/* Relative relocation entry.  */
   /* Keep this the last entry.  */
   ELF_T_NUM
 } Elf_Type;
@@ -288,7 +302,7 @@ extern Elf_Scn *elf_getscn (Elf *__elf, size_t __index);
 
 /* Get section at OFFSET.  */
 extern Elf_Scn *elf32_offscn (Elf *__elf, Elf32_Off __offset);
-/* Similar bug this time the binary calls is ELFCLASS64.  */
+/* Similar but this time the binary calls is ELFCLASS64.  */
 extern Elf_Scn *elf64_offscn (Elf *__elf, Elf64_Off __offset);
 
 /* Get index of section.  */

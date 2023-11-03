@@ -204,7 +204,8 @@ const xfct_t __elf_xfctstom[ELFCLASSNUM - 1][ELF_T_NUM] =
 	[ELF_T_MOVE]	= ElfW2(Bits, cvt_Move),			      \
 	[ELF_T_LIB]	= ElfW2(Bits, cvt_Lib),				      \
 	[ELF_T_AUXV]	= ElfW2(Bits, cvt_auxv_t),			      \
-	[ELF_T_CHDR]	= ElfW2(Bits, cvt_chdr)
+	[ELF_T_CHDR]	= ElfW2(Bits, cvt_chdr),			      \
+	[ELF_T_RELR]	= ElfW2(Bits, cvt_Relr)
         define_xfcts (32),
 	[ELF_T_GNUHASH] = Elf32_cvt_Word
       },

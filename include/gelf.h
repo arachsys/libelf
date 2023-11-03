@@ -82,6 +82,9 @@ typedef Elf64_Rel GElf_Rel;
 /* Relocation table entry with addend (in section of type SHT_RELA).  */
 typedef Elf64_Rela GElf_Rela;
 
+/* Relative relocation entry (in section of type SHT_RELR).  */
+typedef Elf64_Relr GElf_Relr;
+
 /* Program segment header.  */
 typedef Elf64_Phdr GElf_Phdr;
 
