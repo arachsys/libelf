@@ -256,6 +256,9 @@ __elfw2(LIBELFBITS,updatenull_wrlock) (Elf *elf, int *change_bop, size_t shnum)
 		case SHT_SUNW_syminfo:
 		  sh_entsize = elf_typesize (LIBELFBITS, ELF_T_SYMINFO, 1);
 		  break;
+		case SHT_RELR:
+		  sh_entsize = elf_typesize (LIBELFBITS, ELF_T_RELR, 1);
+		  break;
 		default:
 		  break;
 		}
@@ -404,7 +407,7 @@ __elfw2(LIBELFBITS,updatenull_wrlock) (Elf *elf, int *change_bop, size_t shnum)
 		  else
 		    {
 		      ElfW2(LIBELFBITS,Chdr) *chdr;
-		      chdr = elfw2(LIBELFBITS,getchdr) (scn);
+		      chdr = __elfw2(LIBELFBITS,getchdr_wrlock) (scn);
 		      if (unlikely (chdr == NULL))
 			return -1;
 		      sh_size = chdr->ch_size;

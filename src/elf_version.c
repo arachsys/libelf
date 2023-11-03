@@ -32,11 +32,20 @@
 #endif
 
 #include <libelfP.h>
+#include <pthread.h>
 
+/* Multiple threads may initialize __libelf_version.
+   pthread_once() ensures that __libelf_version is initialized only once. */
+once_define(static, version_once);
 
 /* Currently selected version.  Should be EV_CURRENT.
    Will be EV_NONE if elf_version () has not been called yet.  */
 unsigned int __libelf_version = EV_NONE;
+
+static void initialize_version(void)
+{
+  __libelf_version = EV_CURRENT;
+}
 
 unsigned int
 elf_version (unsigned int version)
@@ -49,7 +58,7 @@ elf_version (unsigned int version)
       /* Phew, we know this version.  */
 
       /* Signal that the version is now initialized.  */
-      __libelf_version = EV_CURRENT;
+      once(version_once, initialize_version);
 
       /* And return the last (or initial) version.  */
       return EV_CURRENT;

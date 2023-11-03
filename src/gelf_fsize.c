@@ -69,7 +69,8 @@ const size_t __libelf_type_sizes[ELFCLASSNUM - 1][ELF_T_NUM] =
       [ELF_T_LIB]	= sizeof (ElfW2(LIBELFBITS, Ext_Lib)),		      \
       [ELF_T_AUXV]	= sizeof (ElfW2(LIBELFBITS, Ext_auxv_t)),	      \
       [ELF_T_CHDR]	= sizeof (ElfW2(LIBELFBITS, Ext_Chdr)),		      \
-      [ELF_T_GNUHASH]	= ELFW2(LIBELFBITS, FSZ_WORD)
+      [ELF_T_GNUHASH]	= ELFW2(LIBELFBITS, FSZ_WORD),			      \
+      [ELF_T_RELR]	= ELFW2(LIBELFBITS, FSZ_RELR)
       TYPE_SIZES (32)
     },
     [ELFCLASS64 - 1] = {

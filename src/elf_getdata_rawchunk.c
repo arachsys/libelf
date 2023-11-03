@@ -1,6 +1,6 @@
 /* Return converted data from raw chunk of ELF file.
    Copyright (C) 2007, 2014, 2015 Red Hat, Inc.
-   Copyright (C) 2022 Mark J. Wielaard <mark@klomp.org>
+   Copyright (C) 2022, 2023 Mark J. Wielaard <mark@klomp.org>
    This file is part of elfutils.
 
    This file is free software; you can redistribute it and/or modify
@@ -33,11 +33,27 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <search.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "libelfP.h"
 #include "common.h"
+
+static int
+chunk_compare (const void *a, const void *b)
+{
+  Elf_Data_Chunk *da = (Elf_Data_Chunk *)a;
+  Elf_Data_Chunk *db = (Elf_Data_Chunk *)b;
+
+  if (da->offset != db->offset)
+    return da->offset - db->offset;
+
+  if (da->data.d.d_size != db->data.d.d_size)
+    return da->data.d.d_size - db->data.d.d_size;
+
+  return da->data.d.d_type - db->data.d.d_type;
+}
 
 Elf_Data *
 elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
@@ -75,18 +91,26 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
   rwlock_rdlock (elf->lock);
 
   /* Maybe we already got this chunk?  */
-  Elf_Data_Chunk *rawchunks = elf->state.elf.rawchunks;
-  while (rawchunks != NULL)
+  Elf_Data_Chunk key;
+  key.offset = offset;
+  key.data.d.d_size = size;
+  key.data.d.d_type = type;
+  Elf_Data_Chunk **found = tsearch (&key, &elf->state.elf.rawchunks,
+				    &chunk_compare);
+  if (found == NULL)
+    goto nomem;
+
+  /* Existing entry.  */
+  if (*found != &key && *found != NULL)
     {
-      if ((rawchunks->offset == offset || size == 0)
-	  && rawchunks->data.d.d_size == size
-	  && rawchunks->data.d.d_type == type)
-	{
-	  result = &rawchunks->data.d;
-	  goto out;
-	}
-      rawchunks = rawchunks->next;
+      result = &(*found)->data.d;
+      goto out;
     }
+
+  /* New entry.  Note that *found will point to the newly inserted
+     (dummy) key.  We'll replace it with a real rawchunk when that is
+     setup.  Make sure to tdelete the dummy key if anything goes
+     wrong.  */
 
   size_t align = __libelf_type_align (elf->class, type);
   if (elf->map_address != NULL)
@@ -112,6 +136,7 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
       if (rawchunk == NULL)
 	{
 	nomem:
+	  tdelete (&key, &elf->state.elf.rawchunks, &chunk_compare);
 	  __libelf_seterrno (ELF_E_NOMEM);
 	  goto out;
 	}
@@ -122,6 +147,7 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
 		    != size))
 	{
 	  /* Something went wrong.  */
+	  tdelete (&key, &elf->state.elf.rawchunks, &chunk_compare);
 	  free (rawchunk);
 	  __libelf_seterrno (ELF_E_READ_ERROR);
 	  goto out;
@@ -189,8 +215,7 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
   rwlock_unlock (elf->lock);
   rwlock_wrlock (elf->lock);
 
-  chunk->next = elf->state.elf.rawchunks;
-  elf->state.elf.rawchunks = chunk;
+  *found = chunk;
   result = &chunk->data.d;
 
  out:

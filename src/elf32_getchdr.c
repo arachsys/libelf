@@ -38,46 +38,8 @@
 # define LIBELFBITS 32
 #endif
 
+#define ELF_WRLOCK_HELD 1
+#include "elf32_getchdr.h"
 
-ElfW2(LIBELFBITS,Chdr) *
-elfw2(LIBELFBITS,getchdr) (Elf_Scn *scn)
-{
-  ElfW2(LIBELFBITS,Shdr) *shdr = elfw2(LIBELFBITS,getshdr) (scn);
-  if (shdr == NULL)
-    return NULL;
-
-  /* Must have SHF_COMPRESSED flag set.  Allocated or no bits sections
-     can never be compressed.  */
-  if ((shdr->sh_flags & SHF_ALLOC) != 0)
-    {
-      __libelf_seterrno (ELF_E_INVALID_SECTION_FLAGS);
-      return NULL;
-    }
-
-  if (shdr->sh_type == SHT_NULL
-      || shdr->sh_type == SHT_NOBITS)
-    {
-      __libelf_seterrno (ELF_E_INVALID_SECTION_TYPE);
-      return NULL;
-    }
-
-  if ((shdr->sh_flags & SHF_COMPRESSED) == 0)
-    {
-      __libelf_seterrno (ELF_E_NOT_COMPRESSED);
-      return NULL;
-    }
-
-  /* This makes sure the data is in the correct format, so we don't
-     need to swap fields. */
-  Elf_Data *d  = elf_getdata (scn, NULL);
-  if (d == NULL)
-    return NULL;
-
-  if (d->d_size < sizeof (ElfW2(LIBELFBITS,Chdr)) || d->d_buf == NULL)
-    {
-      __libelf_seterrno (ELF_E_INVALID_DATA);
-      return NULL;
-    }
-
-  return (ElfW2(LIBELFBITS,Chdr) *) d->d_buf;
-}
+#define ELF_WRLOCK_HELD 0
+#include "elf32_getchdr.h"

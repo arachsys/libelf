@@ -1,5 +1,6 @@
 /* Compress or decompress a section.
    Copyright (C) 2015, 2016 Red Hat, Inc.
+   Copyright (C) 2023, Mark J. Wielaard <mark@klomp.org>
    This file is part of elfutils.
 
    This file is free software; you can redistribute it and/or modify
@@ -523,10 +524,20 @@ __libelf_reset_rawdata (Elf_Scn *scn, void *buf, size_t size, size_t align,
   if (scn->data_base != scn->rawdata_base)
     free (scn->data_base);
   scn->data_base = NULL;
+  if (scn->zdata_base != buf
+      && scn->zdata_base != scn->rawdata_base)
+    {
+      free (scn->zdata_base);
+      scn->zdata_base = NULL;
+    }
   if (scn->elf->map_address == NULL
       || scn->rawdata_base == scn->zdata_base
       || (scn->flags & ELF_F_MALLOCED) != 0)
-    free (scn->rawdata_base);
+    {
+      free (scn->rawdata_base);
+      scn->rawdata_base = NULL;
+      scn->zdata_base = NULL;
+    }
 
   scn->rawdata_base = buf;
   scn->flags |= ELF_F_MALLOCED;
@@ -677,6 +688,7 @@ elf_compress (Elf_Scn *scn, int type, unsigned int flags)
 	 data around, but since that might have been multiple Elf_Data
 	 buffers let the user uncompress it explicitly again if they
 	 want it to simplify bookkeeping.  */
+      free (scn->zdata_base);
       scn->zdata_base = NULL;
 
       return 1;

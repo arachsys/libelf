@@ -582,4 +582,18 @@ elf_getdata (Elf_Scn *scn, Elf_Data *data)
 
   return result;
 }
+
+Elf_Data *
+internal_function
+__elf_getdata_wrlock (Elf_Scn *scn, Elf_Data *data)
+{
+  Elf_Data *result;
+
+  if (scn == NULL)
+    return NULL;
+
+  result = __elf_getdata_rdlock (scn, data);
+
+  return result;
+}
 INTDEF(elf_getdata)
