@@ -46,5 +46,5 @@ elf_memory (char *image, size_t size)
       return NULL;
     }
 
-  return __libelf_read_mmaped_file (-1, image, 0, size, ELF_C_READ, NULL);
+  return __libelf_read_mmaped_file (-1, image, 0, size, ELF_C_READ_MMAP, NULL);
 }

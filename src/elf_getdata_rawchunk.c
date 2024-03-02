@@ -175,6 +175,8 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
 
 	  /* The copy will be appropriately aligned for direct access.  */
 	  memcpy (buffer, rawchunk, size);
+
+	  free (rawchunk);
 	}
     }
   else
@@ -191,6 +193,9 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
 
       /* Call the conversion function.  */
       (*__elf_xfctstom[elf->class - 1][type])(buffer, rawchunk, size, 0);
+
+      if (!flags)
+	free (rawchunk);
     }
 
   /* Allocate the dummy container to point at this buffer.  */
