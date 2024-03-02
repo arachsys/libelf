@@ -1,5 +1,5 @@
 /* This file defines standard ELF types, structures, and macros.
-   Copyright (C) 1995-2023 Free Software Foundation, Inc.
+   Copyright (C) 1995-2024 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -791,9 +791,12 @@ typedef struct
 					   Register */
 #define NT_PPC_PKEY	0x110		/* Memory Protection Keys
 					   registers.  */
+#define NT_PPC_DEXCR	0x111		/* PowerPC DEXCR registers.  */
+#define NT_PPC_HASHKEYR	0x112		/* PowerPC HASHKEYR register.  */
 #define NT_386_TLS	0x200		/* i386 TLS slots (struct user_desc) */
 #define NT_386_IOPERM	0x201		/* x86 io permission bitmap (1=deny) */
 #define NT_X86_XSTATE	0x202		/* x86 extended state using xsave */
+#define NT_X86_SHSTK	0x204		/* x86 SHSTK state */
 #define NT_S390_HIGH_GPRS	0x300	/* s390 upper register halves */
 #define NT_S390_TIMER	0x301		/* s390 timer register */
 #define NT_S390_TODCMP	0x302		/* s390 TOD clock comparator register */
@@ -832,6 +835,8 @@ typedef struct
 #define NT_MIPS_DSP	0x800		/* MIPS DSP ASE registers.  */
 #define NT_MIPS_FP_MODE	0x801		/* MIPS floating-point mode.  */
 #define NT_MIPS_MSA	0x802		/* MIPS SIMD registers.  */
+#define NT_RISCV_CSR	0x900		/* RISC-V Control and Status Registers */
+#define NT_RISCV_VECTOR	0x901		/* RISC-V vector registers */
 #define NT_LOONGARCH_CPUCFG	0xa00	/* LoongArch CPU config registers.  */
 #define NT_LOONGARCH_CSR	0xa01	/* LoongArch control and
 					   status registers.  */
@@ -841,6 +846,8 @@ typedef struct
 					   SIMD Extension registers.  */
 #define NT_LOONGARCH_LBT	0xa04	/* LoongArch Loongson Binary
 					   Translation registers.  */
+#define NT_LOONGARCH_HW_BREAK	0xa05   /* LoongArch hardware breakpoint registers */
+#define NT_LOONGARCH_HW_WATCH	0xa06   /* LoongArch hardware watchpoint registers */
 
 /* Legal values for the note segment descriptor types for object files.  */
 
@@ -3632,6 +3639,11 @@ enum
 /* x86-64 sh_type values.  */
 #define SHT_X86_64_UNWIND	0x70000001 /* Unwind information.  */
 
+/* x86-64 d_tag values.  */
+#define DT_X86_64_PLT		(DT_LOPROC + 0)
+#define DT_X86_64_PLTSZ		(DT_LOPROC + 1)
+#define DT_X86_64_PLTENT	(DT_LOPROC + 3)
+#define DT_X86_64_NUM		4
 
 /* AM33 relocations.  */
 #define R_MN10300_NONE		0	/* No reloc.  */
@@ -4319,6 +4331,23 @@ enum
 #define R_LARCH_ADD_ULEB128 107
 #define R_LARCH_SUB_ULEB128 108
 #define R_LARCH_64_PCREL 109
+#define R_LARCH_CALL36 110
+#define R_LARCH_TLS_DESC_PC_HI20 111
+#define R_LARCH_TLS_DESC_PC_LO12 112
+#define R_LARCH_TLS_DESC64_PC_LO20 113
+#define R_LARCH_TLS_DESC64_PC_HI12 114
+#define R_LARCH_TLS_DESC_HI20 115
+#define R_LARCH_TLS_DESC_LO12 116
+#define R_LARCH_TLS_DESC64_LO20 117
+#define R_LARCH_TLS_DESC64_HI12 118
+#define R_LARCH_TLS_DESC_LD 119
+#define R_LARCH_TLS_DESC_CALL 120
+#define R_LARCH_TLS_LE_HI20_R 121
+#define R_LARCH_TLS_LE_ADD_R 122
+#define R_LARCH_TLS_LE_LO12_R 123
+#define R_LARCH_TLS_LD_PCREL20_S2 124
+#define R_LARCH_TLS_GD_PCREL20_S2 125
+#define R_LARCH_TLS_DESC_PCREL20_S2 126
 
 /* ARC specific declarations.  */
 

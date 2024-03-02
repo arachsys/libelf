@@ -422,7 +422,7 @@ __libelf_decompress_zstd (void *buf_in, size_t size_in, size_t size_out)
     }
 
   size_t ret = ZSTD_decompress (buf_out, size_out, buf_in, size_in);
-  if (ZSTD_isError (ret))
+  if (unlikely (ZSTD_isError (ret)) || unlikely (ret != size_out))
     {
       free (buf_out);
       __libelf_seterrno (ELF_E_DECOMPRESS_ERROR);

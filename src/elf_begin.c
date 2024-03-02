@@ -38,6 +38,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/stat.h>
 
@@ -341,15 +342,15 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
     {
       /* This pointer might not be directly usable if the alignment is
 	 not sufficient for the architecture.  */
-      Elf32_Ehdr *ehdr = (Elf32_Ehdr *) ((char *) map_address + offset);
+      uintptr_t ehdr = (uintptr_t) map_address + offset;
 
       /* This is a 32-bit binary.  */
       if (map_address != NULL && e_ident[EI_DATA] == MY_ELFDATA
 	  && (ALLOW_UNALIGNED
-	      || (((uintptr_t) ehdr) & (__alignof__ (Elf32_Ehdr) - 1)) == 0))
+	      || (ehdr & (__alignof__ (Elf32_Ehdr) - 1)) == 0))
 	{
 	  /* We can use the mmapped memory.  */
-	  elf->state.elf32.ehdr = ehdr;
+	  elf->state.elf32.ehdr = (Elf32_Ehdr *) ehdr;
 	}
       else
 	{
@@ -382,8 +383,7 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
       if (map_address != NULL && e_ident[EI_DATA] == MY_ELFDATA
 	  && cmd != ELF_C_READ_MMAP /* We need a copy to be able to write.  */
 	  && (ALLOW_UNALIGNED
-	      || ((((uintptr_t) ehdr + e_shoff)
-		   & (__alignof__ (Elf32_Shdr) - 1)) == 0)))
+	      || (((ehdr + e_shoff) & (__alignof__ (Elf32_Shdr) - 1)) == 0)))
 	{
 	  if (unlikely (scncnt > 0 && e_shoff >= maxsize)
 	      || unlikely (maxsize - e_shoff
@@ -396,8 +396,7 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
 	    }
 
 	  if (scncnt > 0)
-	    elf->state.elf32.shdr
-	      = (Elf32_Shdr *) ((char *) ehdr + e_shoff);
+	    elf->state.elf32.shdr = (Elf32_Shdr *) (ehdr + e_shoff);
 
 	  for (size_t cnt = 0; cnt < scncnt; ++cnt)
 	    {
@@ -445,15 +444,15 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
     {
       /* This pointer might not be directly usable if the alignment is
 	 not sufficient for the architecture.  */
-      Elf64_Ehdr *ehdr = (Elf64_Ehdr *) ((char *) map_address + offset);
+      uintptr_t ehdr = (uintptr_t) map_address + offset;
 
       /* This is a 64-bit binary.  */
       if (map_address != NULL && e_ident[EI_DATA] == MY_ELFDATA
 	  && (ALLOW_UNALIGNED
-	      || (((uintptr_t) ehdr) & (__alignof__ (Elf64_Ehdr) - 1)) == 0))
+	      || (ehdr & (__alignof__ (Elf64_Ehdr) - 1)) == 0))
 	{
 	  /* We can use the mmapped memory.  */
-	  elf->state.elf64.ehdr = ehdr;
+	  elf->state.elf64.ehdr = (Elf64_Ehdr *) ehdr;
 	}
       else
 	{
@@ -486,8 +485,7 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
       if (map_address != NULL && e_ident[EI_DATA] == MY_ELFDATA
 	  && cmd != ELF_C_READ_MMAP /* We need a copy to be able to write.  */
 	  && (ALLOW_UNALIGNED
-	      || ((((uintptr_t) ehdr + e_shoff)
-		   & (__alignof__ (Elf64_Shdr) - 1)) == 0)))
+	      || (((ehdr + e_shoff) & (__alignof__ (Elf64_Shdr) - 1)) == 0)))
 	{
 	  if (unlikely (scncnt > 0 && e_shoff >= maxsize)
 	      || unlikely (maxsize - e_shoff
@@ -495,8 +493,7 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
 	    goto free_and_out;
 
 	  if (scncnt > 0)
-	    elf->state.elf64.shdr
-	      = (Elf64_Shdr *) ((char *) ehdr + e_shoff);
+	    elf->state.elf64.shdr = (Elf64_Shdr *) (ehdr + (ptrdiff_t) e_shoff);
 
 	  for (size_t cnt = 0; cnt < scncnt; ++cnt)
 	    {
