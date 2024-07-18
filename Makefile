@@ -23,7 +23,7 @@ clean:
 libelf.a: $(LIBOBJS) Makefile
 	$(AR) rcs $@ $(LIBOBJS)
 
-libelf.so: $(PICOBJS) Makefile 
+libelf.so: $(PICOBJS) Makefile
 	$(CC) $(LDFLAGS) -shared -Wl,-soname,libelf.so.$(MAJOR) \
 	  -o $@ $(PICOBJS) $(LDLIBS)
 
