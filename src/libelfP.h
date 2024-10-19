@@ -33,6 +33,7 @@
 
 #include <ar.h>
 #include <gelf.h>
+#include "eu-search.h"
 
 #include <errno.h>
 #include <stdbool.h>
@@ -323,7 +324,8 @@ struct Elf
       Elf_ScnList *scns_last;	/* Last element in the section list.
 				   If NULL the data has not yet been
 				   read from the file.  */
-      void *rawchunks;		/* Tree of elf_getdata_rawchunk results.  */
+      search_tree rawchunk_tree;  /* Tree and lock for elf_getdata_rawchunk
+				     results.  */
       unsigned int scnincr;	/* Number of sections allocate the last
 				   time.  */
       int ehdr_flags;		/* Flags (dirty) for ELF header.  */
@@ -342,7 +344,8 @@ struct Elf
       Elf_ScnList *scns_last;	/* Last element in the section list.
 				   If NULL the data has not yet been
 				   read from the file.  */
-      void *rawchunks;		/* Tree of elf_getdata_rawchunk results.  */
+      search_tree rawchunk_tree;  /* Tree and lock for
+				     elf_getdata_rawchunk results.  */
       unsigned int scnincr;	/* Number of sections allocate the last
 				   time.  */
       int ehdr_flags;		/* Flags (dirty) for ELF header.  */
@@ -367,7 +370,8 @@ struct Elf
       Elf_ScnList *scns_last;	/* Last element in the section list.
 				   If NULL the data has not yet been
 				   read from the file.  */
-      void *rawchunks;		/* Tree of elf_getdata_rawchunk results.  */
+      search_tree rawchunk_tree;  /* Tree and lock for
+				     elf_getdata_rawchunk results.  */
       unsigned int scnincr;	/* Number of sections allocate the last
 				   time.  */
       int ehdr_flags;		/* Flags (dirty) for ELF header.  */
@@ -617,4 +621,7 @@ extern void __libelf_reset_rawdata (Elf_Scn *scn, void *buf, size_t size,
 #define INVALID_NDX(ndx, type, data) \
   unlikely ((data)->d_size / sizeof (type) <= (unsigned int) (ndx))
 
+#define ELF64_MIPS_R_TYPE1(i)          ((i) & 0xff)
+#define ELF64_MIPS_R_TYPE2(i)           (((i) >> 8) & 0xff)
+#define ELF64_MIPS_R_TYPE3(i)           (((i) >> 16) & 0xff)
 #endif  /* libelfP.h */

@@ -126,13 +126,14 @@ elf_end (Elf *elf)
 
     case ELF_K_ELF:
       {
-	void *rawchunks
+	search_tree *rawchunk_tree
 	  = (elf->class == ELFCLASS32
-	     || (offsetof (struct Elf, state.elf32.rawchunks)
-		 == offsetof (struct Elf, state.elf64.rawchunks))
-	     ? elf->state.elf32.rawchunks
-	     : elf->state.elf64.rawchunks);
-	tdestroy (rawchunks, free_chunk);
+	     || (offsetof (struct Elf, state.elf32.rawchunk_tree)
+		 == offsetof (struct Elf, state.elf64.rawchunk_tree))
+	     ? &elf->state.elf32.rawchunk_tree
+	     : &elf->state.elf64.rawchunk_tree);
+
+	eu_search_tree_fini (rawchunk_tree, free_chunk);
 
 	Elf_ScnList *list = (elf->class == ELFCLASS32
 			     || (offsetof (struct Elf, state.elf32.scns)

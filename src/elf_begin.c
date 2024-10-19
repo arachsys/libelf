@@ -439,6 +439,7 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
 
       /* So far only one block with sections.  */
       elf->state.elf32.scns_last = &elf->state.elf32.scns;
+      eu_search_tree_init (&elf->state.elf32.rawchunk_tree);
     }
   else
     {
@@ -536,6 +537,7 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
 
       /* So far only one block with sections.  */
       elf->state.elf64.scns_last = &elf->state.elf64.scns;
+      eu_search_tree_init (&elf->state.elf64.rawchunk_tree);
     }
 
   return elf;

@@ -33,12 +33,11 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <search.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "libelfP.h"
 #include "common.h"
+#include "eu-search.h"
 
 static int
 chunk_compare (const void *a, const void *b)
@@ -95,8 +94,9 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
   key.offset = offset;
   key.data.d.d_size = size;
   key.data.d.d_type = type;
-  Elf_Data_Chunk **found = tsearch (&key, &elf->state.elf.rawchunks,
-				    &chunk_compare);
+  Elf_Data_Chunk **found
+    = eu_tsearch (&key, &elf->state.elf.rawchunk_tree, &chunk_compare);
+
   if (found == NULL)
     goto nomem;
 
@@ -136,7 +136,7 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
       if (rawchunk == NULL)
 	{
 	nomem:
-	  tdelete (&key, &elf->state.elf.rawchunks, &chunk_compare);
+	  eu_tdelete (&key, &elf->state.elf.rawchunk_tree, &chunk_compare);
 	  __libelf_seterrno (ELF_E_NOMEM);
 	  goto out;
 	}
@@ -147,7 +147,7 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
 		    != size))
 	{
 	  /* Something went wrong.  */
-	  tdelete (&key, &elf->state.elf.rawchunks, &chunk_compare);
+	  eu_tdelete (&key, &elf->state.elf.rawchunk_tree, &chunk_compare);
 	  free (rawchunk);
 	  __libelf_seterrno (ELF_E_READ_ERROR);
 	  goto out;
