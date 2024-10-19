@@ -28,8 +28,8 @@ git checkout upstream
 git rm -q -r include src
 mkdir -p include src
 
-for FILE in $TMP/libelf/*.[ch] $TMP/lib/crc32.c $TMP/lib/eu-config.h \
-    $TMP/lib/fixedsizehash.h $TMP/lib/next_prime.c $TMP/lib/system.h; do
+for FILE in $TMP/libelf/*.[ch] $TMP/lib/{crc32,next_prime}.c \
+    $TMP/lib/{eu-config,eu-search,fixedsizehash,locks,system}.h; do
   sed ':a;s/[ \t]*$//;/^\n*$/{$d;N;ba}' "$FILE" >"src/${FILE##*/}"
   git add "src/${FILE##*/}"
 done
@@ -52,6 +52,6 @@ else
   git commit -m "Merge from upstream libelf $1"
 
   echo "Merged libelf ready to review, build and test"
-  echo "Sign: git tag -m libelf-$1 -s libelf-$1"
+  echo "Sign: git tag -m v$1 -s v$1"
   echo "Push: git push --tags origin upstream master"
 fi
