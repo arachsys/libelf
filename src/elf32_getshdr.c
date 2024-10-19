@@ -126,7 +126,7 @@ load_shdr_wrlock (Elf_Scn *scn)
 	      if (unlikely (notcvt == NULL))
 		{
 		  __libelf_seterrno (ELF_E_NOMEM);
-		  goto out;
+		  goto free_and_out;
 		}
 	      memcpy (notcvt, ((char *) elf->map_address
 			       + elf->start_offset + ehdr->e_shoff),

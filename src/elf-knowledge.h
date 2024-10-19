@@ -98,4 +98,136 @@
 #define GNU_BUILD_ATTRIBUTE_PIC		7
 #define GNU_BUILD_ATTRIBUTE_SHORT_ENUM	8
 
+/* Hexagon specific declarations.  */
+
+/* Processor specific flags for the Ehdr e_flags field.  */
+#define EF_HEXAGON_MACH_V2   0x00000001 /* Hexagon V2 */
+#define EF_HEXAGON_MACH_V3   0x00000002 /* Hexagon V3 */
+#define EF_HEXAGON_MACH_V4   0x00000003 /* Hexagon V4 */
+#define EF_HEXAGON_MACH_V5   0x00000004 /* Hexagon V5 */
+#define EF_HEXAGON_MACH_V55  0x00000005 /* Hexagon V55 */
+#define EF_HEXAGON_MACH_V60  0x00000060 /* Hexagon V60 */
+#define EF_HEXAGON_MACH_V61  0x00000061 /* Hexagon V61 */
+#define EF_HEXAGON_MACH_V62  0x00000062 /* Hexagon V62 */
+#define EF_HEXAGON_MACH_V65  0x00000065 /* Hexagon V65 */
+#define EF_HEXAGON_MACH_V66  0x00000066 /* Hexagon V66 */
+#define EF_HEXAGON_MACH_V67  0x00000067 /* Hexagon V67 */
+#define EF_HEXAGON_MACH_V67T 0x00008067 /* Hexagon V67T */
+#define EF_HEXAGON_MACH_V68  0x00000068 /* Hexagon V68 */
+#define EF_HEXAGON_MACH_V69  0x00000069 /* Hexagon V68 */
+#define EF_HEXAGON_MACH_V71  0x00000071 /* Hexagon V71 */
+#define EF_HEXAGON_MACH_V71T 0x00008071 /* Hexagon V71T */
+#define EF_HEXAGON_MACH_V73  0x00000073 /* Hexagon V73 */
+#define EF_HEXAGON_MACH      0x000003ff /* Hexagon V.. */
+#define EF_HEXAGON_TINY      0x00008000 /* Hexagon V..T */
+
+/* Special section indices.  */
+#define SHN_HEXAGON_SCOMMON    0xff00 /* Other access sizes */
+#define SHN_HEXAGON_SCOMMON_1  0xff01 /* Byte-sized access */
+#define SHN_HEXAGON_SCOMMON_2  0xff02 /* Half-word-sized access */
+#define SHN_HEXAGON_SCOMMON_4  0xff03 /* Word-sized access */
+#define SHN_HEXAGON_SCOMMON_8  0xff04 /* Double-word-size access */
+
+/* Hexagon specific relocs.  */
+#define R_HEX_NONE                0
+#define R_HEX_B22_PCREL           1
+#define R_HEX_B15_PCREL           2
+#define R_HEX_B7_PCREL            3
+#define R_HEX_LO16                4
+#define R_HEX_HI16                5
+#define R_HEX_32                  6
+#define R_HEX_16                  7
+#define R_HEX_8                   8
+#define R_HEX_GPREL16_0           9
+#define R_HEX_GPREL16_1           10
+#define R_HEX_GPREL16_2           11
+#define R_HEX_GPREL16_3           12
+#define R_HEX_HL16                13
+#define R_HEX_B13_PCREL           14
+#define R_HEX_B9_PCREL            15
+#define R_HEX_B32_PCREL_X         16
+#define R_HEX_32_6_X              17
+#define R_HEX_B22_PCREL_X         18
+#define R_HEX_B15_PCREL_X         19
+#define R_HEX_B13_PCREL_X         20
+#define R_HEX_B9_PCREL_X          21
+#define R_HEX_B7_PCREL_X          22
+#define R_HEX_16_X                23
+#define R_HEX_12_X                24
+#define R_HEX_11_X                25
+#define R_HEX_10_X                26
+#define R_HEX_9_X                 27
+#define R_HEX_8_X                 28
+#define R_HEX_7_X                 29
+#define R_HEX_6_X                 30
+#define R_HEX_32_PCREL            31
+#define R_HEX_COPY                32
+#define R_HEX_GLOB_DAT            33
+#define R_HEX_JMP_SLOT            34
+#define R_HEX_RELATIVE            35
+#define R_HEX_PLT_B22_PCREL       36
+#define R_HEX_GOTREL_LO16         37
+#define R_HEX_GOTREL_HI16         38
+#define R_HEX_GOTREL_32           39
+#define R_HEX_GOT_LO16            40
+#define R_HEX_GOT_HI16            41
+#define R_HEX_GOT_32              42
+#define R_HEX_GOT_16              43
+#define R_HEX_DTPMOD_32           44
+#define R_HEX_DTPREL_LO16         45
+#define R_HEX_DTPREL_HI16         46
+#define R_HEX_DTPREL_32           47
+#define R_HEX_DTPREL_16           48
+#define R_HEX_GD_PLT_B22_PCREL    49
+#define R_HEX_GD_GOT_LO16         50
+#define R_HEX_GD_GOT_HI16         51
+#define R_HEX_GD_GOT_32           52
+#define R_HEX_GD_GOT_16           53
+#define R_HEX_IE_LO16             54
+#define R_HEX_IE_HI16             55
+#define R_HEX_IE_32               56
+#define R_HEX_IE_GOT_LO16         57
+#define R_HEX_IE_GOT_HI16         58
+#define R_HEX_IE_GOT_32           59
+#define R_HEX_IE_GOT_16           60
+#define R_HEX_TPREL_LO16          61
+#define R_HEX_TPREL_HI16          62
+#define R_HEX_TPREL_32            63
+#define R_HEX_TPREL_16            64
+#define R_HEX_6_PCREL_X           65
+#define R_HEX_GOTREL_32_6_X       66
+#define R_HEX_GOTREL_16_X         67
+#define R_HEX_GOTREL_11_X         68
+#define R_HEX_GOT_32_6_X          69
+#define R_HEX_GOT_16_X            70
+#define R_HEX_GOT_11_X            71
+#define R_HEX_DTPREL_32_6_X       72
+#define R_HEX_DTPREL_16_X         73
+#define R_HEX_DTPREL_11_X         74
+#define R_HEX_GD_GOT_32_6_X       75
+#define R_HEX_GD_GOT_16_X         76
+#define R_HEX_GD_GOT_11_X         77
+#define R_HEX_IE_32_6_X           78
+#define R_HEX_IE_16_X             79
+#define R_HEX_IE_GOT_32_6_X       80
+#define R_HEX_IE_GOT_16_X         81
+#define R_HEX_IE_GOT_11_X         82
+#define R_HEX_TPREL_32_6_X        83
+#define R_HEX_TPREL_16_X          84
+#define R_HEX_TPREL_11_X          85
+#define R_HEX_LD_PLT_B22_PCREL    86
+#define R_HEX_LD_GOT_LO16         87
+#define R_HEX_LD_GOT_HI16         88
+#define R_HEX_LD_GOT_32           89
+#define R_HEX_LD_GOT_16           90
+#define R_HEX_LD_GOT_32_6_X       91
+#define R_HEX_LD_GOT_16_X         92
+#define R_HEX_LD_GOT_11_X         93
+#define R_HEX_23_REG              94
+#define R_HEX_GD_PLT_B22_PCREL_X  95
+#define R_HEX_GD_PLT_B32_PCREL_X  96
+#define R_HEX_LD_PLT_B22_PCREL_X  97
+#define R_HEX_LD_PLT_B32_PCREL_X  98
+#define R_HEX_27_REG              99
+
 #endif	/* elf-knowledge.h */

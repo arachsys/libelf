@@ -519,7 +519,17 @@ __libelf_reset_rawdata (Elf_Scn *scn, void *buf, size_t size, size_t align,
   scn->rawdata.d.d_align = align;
   scn->rawdata.d.d_type = type;
 
+  /* Remove the old data.  */
+  Elf_Data_List *runp = scn->data_list.next;
+  while (runp != NULL)
+    {
+      Elf_Data_List *oldp = runp;
+      runp = runp->next;
+      if ((oldp->flags & ELF_F_MALLOCED) != 0)
+	free (oldp);
+    }
   /* Existing existing data is no longer valid.  */
+  scn->data_list.next = NULL;
   scn->data_list_rear = NULL;
   if (scn->data_base != scn->rawdata_base)
     free (scn->data_base);
