@@ -28,7 +28,7 @@ git checkout upstream
 git rm -q -r include src
 mkdir -p include src
 
-for FILE in $TMP/libelf/*.[ch] $TMP/lib/{crc32,next_prime}.c \
+for FILE in $TMP/libelf/*.[ch] $TMP/lib/{crc32,eu-search,next_prime}.c \
     $TMP/lib/{eu-config,eu-search,fixedsizehash,locks,system}.h; do
   sed ':a;s/[ \t]*$//;/^\n*$/{$d;N;ba}' "$FILE" >"src/${FILE##*/}"
   git add "src/${FILE##*/}"
