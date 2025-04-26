@@ -315,7 +315,14 @@ extern Elf_Scn *elf_nextscn (Elf *__elf, Elf_Scn *__scn);
 extern Elf_Scn *elf_newscn (Elf *__elf);
 
 /* Get the section index of the extended section index table for the
-   given symbol table.  */
+   given symbol table.  Returns -1 when the given Elf_Scn is NULL or
+   if an error occurred during lookup, elf_errno will be set.  Returns
+   0 if the given Elf_Scn isn't a symbol table (sh_type is not
+   SHT_SYMTAB) or no extended section index table could be
+   found. Otherwise the section index of the extended section index
+   table for the given Elf_Scn is returned.  An extended index table
+   has a sh_type of SHT_SYMTAB_SHNDX and a sh_link equal to the given
+   symbol table section index.  */
 extern int elf_scnshndx (Elf_Scn *__scn);
 
 /* Get the number of sections in the ELF file.  If the file uses more
