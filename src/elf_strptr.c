@@ -1,5 +1,6 @@
 /* Return string pointer from string section.
    Copyright (C) 1998-2002, 2004, 2008, 2009, 2015 Red Hat, Inc.
+   Copyright (C) 2025 Mark J. Wielaard <mark@klomp.org>
    This file is part of elfutils.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 1998.
 
@@ -51,24 +52,6 @@ get_zdata (Elf_Scn *strscn)
   strscn->zdata_align = zalign;
 
   return zdata;
-}
-
-static bool validate_str (const char *str, size_t from, size_t to)
-{
-#if HAVE_DECL_MEMRCHR
-  // Check end first, which is likely a zero terminator, to prevent function call
-  return ((to > 0 && str[to - 1]  == '\0')
-	  || (to - from > 0 && memrchr (&str[from], '\0', to - from - 1) != NULL));
-#else
-  do {
-    if (to <= from)
-      return false;
-
-    to--;
-  } while (str[to]);
-
-  return true;
-#endif
 }
 
 char *
@@ -201,9 +184,12 @@ elf_strptr (Elf *elf, size_t idx, size_t offset)
       // initialized yet (when data_read is zero). So we cannot just
       // look at the rawdata.d.d_size.
 
-      /* Make sure the string is NUL terminated.  Start from the end,
-	 which very likely is a NUL char.  */
-      if (likely (validate_str (strscn->rawdata_base, offset, sh_size)))
+      /* First check there actually is any data.  This could be a new
+         section which hasn't had any data set yet.  Then make sure
+         the string is at a valid offset and NUL terminated.  */
+      if (unlikely (strscn->rawdata_base == NULL))
+	__libelf_seterrno (ELF_E_INVALID_SECTION);
+      else if (likely (validate_str (strscn->rawdata_base, offset, sh_size)))
 	result = &strscn->rawdata_base[offset];
       else
 	__libelf_seterrno (ELF_E_INVALID_INDEX);

@@ -218,9 +218,6 @@ struct Elf_Scn
   int data_read;		/* Nonzero if the section was created by the
 				   user or if the data from the file/memory
 				   is read.  */
-  int shndx_index;		/* Index of the extended section index
-				   table for this symbol table (if this
-				   section is a symbol table).  */
 
   size_t index;			/* Index of this section.  */
   struct Elf *elf;		/* The underlying ELF file.  */
@@ -524,7 +521,6 @@ extern Elf_Scn *__elf_getscn_internal (Elf *__elf, size_t __index)
      attribute_hidden;
 extern Elf_Scn *__elf_nextscn_internal (Elf *__elf, Elf_Scn *__scn)
      attribute_hidden;
-extern int __elf_scnshndx_internal (Elf_Scn *__scn) attribute_hidden;
 extern Elf_Data *__elf_getdata_internal (Elf_Scn *__scn, Elf_Data *__data)
      attribute_hidden;
 extern Elf_Data *__elf_getdata_rdlock (Elf_Scn *__scn, Elf_Data *__data)

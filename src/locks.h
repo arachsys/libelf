@@ -43,6 +43,17 @@
 # define rwlock_rdlock(lock)            RWLOCK_CALL (rdlock (&lock))
 # define rwlock_wrlock(lock)            RWLOCK_CALL (wrlock (&lock))
 # define rwlock_unlock(lock)            RWLOCK_CALL (unlock (&lock))
+# define mutex_define(class,name)       class pthread_mutex_t name
+# define MUTEX_CALL(call)		\
+  ({ int _err = pthread_mutex_ ## call; assert_perror (_err); })
+# define mutex_init(lock)					   \
+  ({ pthread_mutexattr_t _attr;					   \
+     pthread_mutexattr_init (&_attr);				   \
+     pthread_mutexattr_settype (&_attr, PTHREAD_MUTEX_RECURSIVE);  \
+     MUTEX_CALL (init (&lock, &_attr)); })
+# define mutex_lock(_lock)		MUTEX_CALL (lock (&_lock))
+# define mutex_unlock(lock)		MUTEX_CALL (unlock (&lock))
+# define mutex_fini(lock)		MUTEX_CALL (destroy (&lock))
 # define once(once_control, init_routine)  \
   ONCE_CALL (once (&once_control, init_routine))
 #else
@@ -55,6 +66,11 @@
 # define rwlock_rdlock(lock) ((void) (lock))
 # define rwlock_wrlock(lock) ((void) (lock))
 # define rwlock_unlock(lock) ((void) (lock))
+# define mutex_define(class,name) class int name
+# define mutex_init(lock) ((void) (lock))
+# define mutex_lock(lock) ((void) (lock))
+# define mutex_unlock(lock) ((void) (lock))
+# define mutex_fini(lock) ((void) (lock))
 # define once_define(class,name)
 # define once(once_control, init_routine)       init_routine()
 #endif  /* USE_LOCKS */

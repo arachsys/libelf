@@ -31,9 +31,15 @@
 #ifndef LIB_SYSTEM_H
 #define LIB_SYSTEM_H	1
 
-#include <config.h>
+/* Prevent double inclusion of config.h, config.h includes eu-config.h.  */
+#ifdef HAVE_CONFIG_H
+#ifndef EU_CONFIG_H
+# include <config.h>
+#endif
+#endif
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -96,6 +102,32 @@ static inline int
 startswith (const char *str, const char *prefix)
 {
   return strncmp (str, prefix, strlen (prefix)) == 0;
+}
+
+/* Return TRUE if STR[FROM] is a valid string with a zero terminator
+   at or before STR[TO - 1].  Note FROM is an index into the STR
+   array, while TO is the maximum size of the STR array.  This
+   function returns FALSE when TO is zero or FROM >= TO.  */
+static inline bool
+validate_str (const char *str, size_t from, size_t to)
+{
+#if HAVE_DECL_MEMRCHR
+  // Check end first, which is likely a zero terminator,
+  // to prevent function call
+  return (to > 0
+	  && (str[to - 1] == '\0'
+	      || (to > from
+		  && memrchr (&str[from], '\0', to - from - 1) != NULL)));
+#else
+  do {
+    if (to <= from)
+      return false;
+
+    to--;
+  } while (str[to]);
+
+  return true;
+#endif
 }
 
 /* A special gettext function we use if the strings are too short.  */

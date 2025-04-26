@@ -1,5 +1,6 @@
 /* Get the section index of the extended section index table.
    Copyright (C) 2007 Red Hat, Inc.
+   Copyright (C) 2025 Mark J. Wielaard <mark@klomp.org>
    This file is part of elfutils.
    Contributed by Ulrich Drepper <drepper@redhat.com>, 2007.
 
@@ -37,14 +38,53 @@
 int
 elf_scnshndx (Elf_Scn *scn)
 {
-  if (unlikely (scn->shndx_index == 0))
+  size_t scnndx;
+  GElf_Shdr shdr_mem;
+  GElf_Shdr *shdr;
+  Elf *elf;
+  Elf_Scn *nscn;
+
+  if (scn == NULL)
+    return -1;
+
+  scnndx = scn->index;
+  elf = scn->elf;
+
+  shdr = gelf_getshdr (scn, &shdr_mem);
+  if (shdr == NULL)
+    return -1;
+
+  /* Only SYMTAB sections can have a SHNDX section.  */
+  if (shdr->sh_type != SHT_SYMTAB)
+    return 0;
+
+  /* By convention the SHT_SYMTAB_SHNDX section is right after the the
+     SHT_SYMTAB section, so start there.  */
+  nscn = scn;
+  while ((nscn = elf_nextscn (elf, nscn)) != NULL)
     {
-      /* We do not have the value yet.  We get it as a side effect of
-	 getting a section header.  */
-      GElf_Shdr shdr_mem;
-      (void) INTUSE(gelf_getshdr) (scn, &shdr_mem);
+      shdr = gelf_getshdr (nscn, &shdr_mem);
+      if (shdr == NULL)
+	return -1;
+
+      if (shdr->sh_type == SHT_SYMTAB_SHNDX && shdr->sh_link == scnndx)
+	return nscn->index;
     }
 
-  return scn->shndx_index;
+  /* OK, not found, start from the top.  */
+  nscn = NULL;
+  while ((nscn = elf_nextscn (elf, nscn)) != NULL
+	 && nscn->index != scnndx)
+    {
+      shdr = gelf_getshdr (nscn, &shdr_mem);
+      if (shdr == NULL)
+	return -1;
+
+      if (shdr->sh_type == SHT_SYMTAB_SHNDX && shdr->sh_link == scnndx)
+	return nscn->index;
+    }
+
+  /* No shndx found, but no errors.  */
+  return 0;
 }
 INTDEF(elf_scnshndx)
