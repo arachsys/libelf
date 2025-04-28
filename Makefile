@@ -1,9 +1,14 @@
+PREFIX ?= /usr/local
 INCDIR = $(PREFIX)/include
 LIBDIR = $(PREFIX)/lib
+DATADIR = $(PREFIX)/share
+PKG_CONFIG = pkg-config
 
-CFLAGS = -O2 -Wall
+CFLAGS = -O2 -Wall $(shell $(PKG_CONFIG) --cflags zlib) \
+  $(shell $(PKG_CONFIG) --cflags libzstd)
 LDFLAGS =
-LDLIBS = -lz -lzstd
+LDLIBS = $(shell $(PKG_CONFIG) --libs zlib) \
+  $(shell $(PKG_CONFIG) --libs libzstd)
 
 MAJOR = 1
 MINOR = 0.193
@@ -15,7 +20,7 @@ PICOBJS = $(patsubst %.c,%.os,$(SOURCES))
 
 override CFLAGS += -DHAVE_CONFIG_H -Iinclude -Isrc
 
-all: libelf.a libelf.so
+all: libelf.a libelf.so libelf.pc
 
 clean:
 	rm -f src/*.o src/*.os libelf.a libelf.so
@@ -33,11 +38,23 @@ libelf.so: $(PICOBJS) Makefile
 %.os:: %.c $(HEADERS) Makefile
 	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
 
-install: install-headers install-static install-shared
+libelf.pc: libelf.pc.in Makefile
+	sed \
+		-e 's!@prefix[@]!$(PREFIX)!g' \
+		-e 's!@libdir[@]!$(LIBDIR)!g' \
+		-e 's!@includedir[@]!$(INCDIR)!g' \
+		-e 's!@VERSION[@]!$(MINOR)!g' \
+		$< >$@
+
+install: install-headers install-static install-shared install-pc
 
 install-headers: include/*.h
 	mkdir -p $(DESTDIR)$(INCDIR)
 	install -m 0644 include/*.h $(DESTDIR)$(INCDIR)
+
+install-pc: libelf.pc
+	mkdir -p $(DESTDIR)$(DATADIR)/pkgconfig
+	install -m 0644 $^ $(DESTDIR)$(DATADIR)/pkgconfig
 
 install-static: libelf.a install-headers
 	mkdir -p $(DESTDIR)$(LIBDIR)
