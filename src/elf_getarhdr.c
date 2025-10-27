@@ -44,30 +44,12 @@ elf_getarhdr (Elf *elf)
   if (elf == NULL)
     return NULL;
 
-  Elf *parent = elf->parent;
-
   /* Calling this function is not ok for any file type but archives.  */
-  if (parent == NULL)
+  if (elf->parent == NULL || elf->parent->kind != ELF_K_AR)
     {
       __libelf_seterrno (ELF_E_INVALID_OP);
       return NULL;
     }
 
-  /* Make sure we have read the archive header.  */
-  if (parent->state.ar.elf_ar_hdr.ar_name == NULL
-      && __libelf_next_arhdr_wrlock (parent) != 0)
-    {
-      rwlock_wrlock (parent->lock);
-      int st = __libelf_next_arhdr_wrlock (parent);
-      rwlock_unlock (parent->lock);
-
-      if (st != 0)
-	/* Something went wrong.  Maybe there is no member left.  */
-	return NULL;
-    }
-
-  /* We can be sure the parent is an archive.  */
-  assert (parent->kind == ELF_K_AR);
-
-  return &parent->state.ar.elf_ar_hdr;
+  return &elf->elf_ar_hdr;
 }

@@ -87,7 +87,7 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
   int flags = 0;
   Elf_Data *result = NULL;
 
-  rwlock_rdlock (elf->lock);
+  rwlock_wrlock (elf->lock);
 
   /* Maybe we already got this chunk?  */
   Elf_Data_Chunk key;
@@ -95,7 +95,7 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
   key.data.d.d_size = size;
   key.data.d.d_type = type;
   Elf_Data_Chunk **found
-    = eu_tsearch (&key, &elf->state.elf.rawchunk_tree, &chunk_compare);
+    = eu_tsearch_nolock (&key, &elf->state.elf.rawchunk_tree, &chunk_compare);
 
   if (found == NULL)
     goto nomem;
@@ -136,7 +136,8 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
       if (rawchunk == NULL)
 	{
 	nomem:
-	  eu_tdelete (&key, &elf->state.elf.rawchunk_tree, &chunk_compare);
+	  eu_tdelete_nolock (&key, &elf->state.elf.rawchunk_tree,
+			     &chunk_compare);
 	  __libelf_seterrno (ELF_E_NOMEM);
 	  goto out;
 	}
@@ -147,7 +148,8 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
 		    != size))
 	{
 	  /* Something went wrong.  */
-	  eu_tdelete (&key, &elf->state.elf.rawchunk_tree, &chunk_compare);
+	  eu_tdelete_nolock (&key, &elf->state.elf.rawchunk_tree,
+			     &chunk_compare);
 	  free (rawchunk);
 	  __libelf_seterrno (ELF_E_READ_ERROR);
 	  goto out;
@@ -216,9 +218,6 @@ elf_getdata_rawchunk (Elf *elf, int64_t offset, size_t size, Elf_Type type)
   chunk->data.d.d_align = align;
   chunk->data.d.d_version = EV_CURRENT;
   chunk->offset = offset;
-
-  rwlock_unlock (elf->lock);
-  rwlock_wrlock (elf->lock);
 
   *found = chunk;
   result = &chunk->data.d;

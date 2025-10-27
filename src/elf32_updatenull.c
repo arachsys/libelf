@@ -135,7 +135,8 @@ __elfw2(LIBELFBITS,updatenull_wrlock) (Elf *elf, int *change_bop, size_t shnum)
   ehdr = __elfw2(LIBELFBITS,getehdr_wrlock) (elf);
 
   /* Set the default values.  */
-  if (ELFW(default_ehdr,LIBELFBITS) (elf, ehdr, shnum, change_bop) != 0)
+  if (ehdr == NULL
+      || ELFW(default_ehdr,LIBELFBITS) (elf, ehdr, shnum, change_bop) != 0)
     return -1;
 
   /* At least the ELF header is there.  */

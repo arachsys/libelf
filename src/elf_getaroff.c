@@ -43,7 +43,7 @@ elf_getaroff (Elf *elf)
 {
   /* Be gratious, the specs demand it.  */
   if (elf == NULL || elf->parent == NULL)
-    return ELF_C_NULL;
+    return -1;
 
   /* We can be sure the parent is an archive.  */
   Elf *parent = elf->parent;
