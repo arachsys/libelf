@@ -53,7 +53,7 @@ elf_rand (Elf *elf, size_t offset)
   if (__libelf_next_arhdr_wrlock (elf) != 0)
     {
       /* Mark the archive header as unusable.  */
-      elf->state.ar.elf_ar_hdr.ar_name = NULL;
+      elf->elf_ar_hdr.ar_name = NULL;
       return 0;
     }
 

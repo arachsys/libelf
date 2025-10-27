@@ -52,6 +52,30 @@ extern void *eu_tfind (const void *key, search_tree *tree,
 extern void *eu_tdelete (const void *key, search_tree *tree,
 		         int (*compare)(const void *, const void *));
 
+/* Search TREE for KEY and add KEY if not found.  No locking is performed.  */
+static inline void *
+eu_tsearch_nolock (const void *key, search_tree *tree,
+		   int (*compare)(const void *, const void *))
+{
+  return tsearch (key, &tree->root, compare);
+}
+
+/* Search TREE for KEY.  No locking is performed.  */
+static inline void *
+eu_tfind_nolock (const void *key, search_tree *tree,
+		 int (*compare)(const void *, const void *))
+{
+  return tfind (key, &tree->root, compare);
+}
+
+/* Delete key from TREE.  No locking is performed.  */
+static inline void *
+eu_tdelete_nolock (const void *key, search_tree *tree,
+		   int (*compare)(const void *, const void *))
+{
+  return tdelete (key, &tree->root, compare);
+}
+
 /* Free all nodes from TREE.  */
 void eu_tdestroy (search_tree *tree, void (*free_node)(void *));
 

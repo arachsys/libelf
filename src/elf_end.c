@@ -116,6 +116,12 @@ elf_end (Elf *elf)
       rwlock_unlock (parent->lock);
     }
 
+  if (elf->elf_ar_hdr.ar_name != NULL)
+    free (elf->elf_ar_hdr.ar_name);
+
+  if (elf->elf_ar_hdr.ar_rawname != NULL)
+    free (elf->elf_ar_hdr.ar_rawname);
+
   /* This was the last activation.  Free all resources.  */
   switch (elf->kind)
     {

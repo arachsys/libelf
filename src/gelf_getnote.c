@@ -51,8 +51,8 @@ gelf_getnote (Elf_Data *data, size_t offset, GElf_Nhdr *result,
 
   /* It's easy to handle this type.  It has the same size for 32 and
      64 bit objects.  */
-  assert (sizeof (GElf_Nhdr) == sizeof (Elf32_Nhdr));
-  assert (sizeof (GElf_Nhdr) == sizeof (Elf64_Nhdr));
+  eu_static_assert (sizeof (GElf_Nhdr) == sizeof (Elf32_Nhdr));
+  eu_static_assert (sizeof (GElf_Nhdr) == sizeof (Elf64_Nhdr));
 
   rwlock_rdlock (((Elf_Data_Scn *) data)->s->elf->lock);
 

@@ -56,7 +56,7 @@ elf_next (Elf *elf)
 
   /* Now advance the offset.  */
   parent->state.ar.offset += (sizeof (struct ar_hdr)
-			      + ((parent->state.ar.elf_ar_hdr.ar_size + 1)
+			      + ((parent->state.ar.cur_ar_hdr.ar_size + 1)
 				 & ~1l));
 
   /* Get the next archive header.  */
@@ -64,7 +64,7 @@ elf_next (Elf *elf)
 
   /* If necessary, mark the archive header as unusable.  */
   if (ret == ELF_C_NULL)
-    parent->state.ar.elf_ar_hdr.ar_name = NULL;
+    parent->state.ar.cur_ar_hdr.ar_name = NULL;
 
   rwlock_unlock (parent->lock);
 

@@ -73,14 +73,15 @@ elfw2(LIBELFBITS,offscn) (Elf *elf, ElfW2(LIBELFBITS,Off) offset)
       for (unsigned int i = 0; i < runp->cnt; ++i)
 	if (runp->data[i].shdr.ELFW(e,LIBELFBITS)->sh_offset == offset)
 	  {
-	    result = &runp->data[i];
-
 	    /* If this section is empty, the following one has the same
 	       sh_offset.  We presume the caller is looking for a nonempty
 	       section, so keep looking if this one is empty.  */
 	    if (runp->data[i].shdr.ELFW(e,LIBELFBITS)->sh_size != 0
 		&& runp->data[i].shdr.ELFW(e,LIBELFBITS)->sh_type != SHT_NOBITS)
-	      goto out;
+	      {
+		result = &runp->data[i];
+		goto out;
+	      }
 	  }
 
       runp = runp->next;

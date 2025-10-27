@@ -306,6 +306,9 @@ struct Elf
   /* Reference counting for the descriptor.  */
   int ref_count;
 
+  /* Structure returned by 'elf_getarhdr'.  */
+  Elf_Arhdr elf_ar_hdr;
+
   /* Lock to handle multithreaded programs.  */
   rwlock_define (,lock);
 
@@ -394,7 +397,8 @@ struct Elf
       int64_t offset;		/* Offset in file we are currently at.
 				   elf_next() advances this to the next
 				   member of the archive.  */
-      Elf_Arhdr elf_ar_hdr;	/* Structure returned by 'elf_getarhdr'.  */
+      Elf_Arhdr cur_ar_hdr;     /* Copy of current archive member's structure
+				   returned by 'elf_getarhdr'.  */
       struct ar_hdr ar_hdr;	/* Header read from file.  */
       char ar_name[16];		/* NUL terminated ar_name of elf_ar_hdr.  */
       char raw_name[17];	/* This is a buffer for the NUL terminated
