@@ -31,7 +31,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <gelf.h>
 #include <string.h>
 
@@ -61,8 +60,8 @@ gelf_getversym (Elf_Data *data, int ndx, GElf_Versym *dst)
 
   /* It's easy to handle this type.  It has the same size for 32 and
      64 bit objects.  */
-  assert (sizeof (GElf_Versym) == sizeof (Elf32_Versym));
-  assert (sizeof (GElf_Versym) == sizeof (Elf64_Versym));
+  eu_static_assert (sizeof (GElf_Versym) == sizeof (Elf32_Versym));
+  eu_static_assert (sizeof (GElf_Versym) == sizeof (Elf64_Versym));
 
   rwlock_rdlock (scn->elf->lock);
 

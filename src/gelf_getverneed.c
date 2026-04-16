@@ -31,7 +31,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <gelf.h>
 #include <string.h>
 
@@ -55,10 +54,10 @@ gelf_getverneed (Elf_Data *data, int offset, GElf_Verneed *dst)
   /* It's easy to handle this type.  It has the same size for 32 and
      64 bit objects.  And fortunately the `ElfXXX_Vernaux' records
      also have the same size.  */
-  assert (sizeof (GElf_Verneed) == sizeof (Elf32_Verneed));
-  assert (sizeof (GElf_Verneed) == sizeof (Elf64_Verneed));
-  assert (sizeof (GElf_Verneed) == sizeof (Elf32_Vernaux));
-  assert (sizeof (GElf_Verneed) == sizeof (Elf64_Vernaux));
+  eu_static_assert (sizeof (GElf_Verneed) == sizeof (Elf32_Verneed));
+  eu_static_assert (sizeof (GElf_Verneed) == sizeof (Elf64_Verneed));
+  eu_static_assert (sizeof (GElf_Verneed) == sizeof (Elf32_Vernaux));
+  eu_static_assert (sizeof (GElf_Verneed) == sizeof (Elf64_Vernaux));
 
   rwlock_rdlock (((Elf_Data_Scn *) data)->s->elf->lock);
 

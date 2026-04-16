@@ -31,7 +31,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <gelf.h>
 #include <stdlib.h>
 
@@ -47,8 +46,8 @@ gelf_update_versym (Elf_Data *data, int ndx, GElf_Versym *src)
     return 0;
 
   /* The types for 32 and 64 bit are the same.  Lucky us.  */
-  assert (sizeof (GElf_Versym) == sizeof (Elf32_Versym));
-  assert (sizeof (GElf_Versym) == sizeof (Elf64_Versym));
+  eu_static_assert (sizeof (GElf_Versym) == sizeof (Elf32_Versym));
+  eu_static_assert (sizeof (GElf_Versym) == sizeof (Elf64_Versym));
 
   /* Check whether we have to resize the data buffer.  */
   if (INVALID_NDX (ndx, GElf_Versym, &data_scn->d))

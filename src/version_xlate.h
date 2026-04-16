@@ -28,7 +28,6 @@
    the GNU Lesser General Public License along with this program.  If
    not, see <http://www.gnu.org/licenses/>.  */
 
-#include <assert.h>
 #include <gelf.h>
 
 #include "libelfP.h"
@@ -48,10 +47,10 @@ elf_cvt_Verdef (void *dest, const void *src, size_t len, int encode)
   GElf_Verdef *dsrc;
 
   /* We rely on the types being all the same size.  */
-  assert (sizeof (GElf_Verdef) == sizeof (Elf32_Verdef));
-  assert (sizeof (GElf_Verdaux) == sizeof (Elf32_Verdaux));
-  assert (sizeof (GElf_Verdef) == sizeof (Elf64_Verdef));
-  assert (sizeof (GElf_Verdaux) == sizeof (Elf64_Verdaux));
+  eu_static_assert (sizeof (GElf_Verdef) == sizeof (Elf32_Verdef));
+  eu_static_assert (sizeof (GElf_Verdaux) == sizeof (Elf32_Verdaux));
+  eu_static_assert (sizeof (GElf_Verdef) == sizeof (Elf64_Verdef));
+  eu_static_assert (sizeof (GElf_Verdaux) == sizeof (Elf64_Verdaux));
 
   if (len == 0)
     return;
@@ -171,10 +170,10 @@ elf_cvt_Verneed (void *dest, const void *src, size_t len, int encode)
   GElf_Verneed *nsrc;
 
   /* We rely on the types being all the same size.  */
-  assert (sizeof (GElf_Verneed) == sizeof (Elf32_Verneed));
-  assert (sizeof (GElf_Vernaux) == sizeof (Elf32_Vernaux));
-  assert (sizeof (GElf_Verneed) == sizeof (Elf64_Verneed));
-  assert (sizeof (GElf_Vernaux) == sizeof (Elf64_Vernaux));
+  eu_static_assert (sizeof (GElf_Verneed) == sizeof (Elf32_Verneed));
+  eu_static_assert (sizeof (GElf_Vernaux) == sizeof (Elf32_Vernaux));
+  eu_static_assert (sizeof (GElf_Verneed) == sizeof (Elf64_Verneed));
+  eu_static_assert (sizeof (GElf_Vernaux) == sizeof (Elf64_Vernaux));
 
   if (len == 0)
     return;

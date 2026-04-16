@@ -31,7 +31,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <gelf.h>
 #include <string.h>
 
@@ -91,7 +90,7 @@ gelf_getsym (Elf_Data *data, int ndx, GElf_Sym *dst)
   else
     {
       /* If this is a 64 bit object it's easy.  */
-      assert (sizeof (GElf_Sym) == sizeof (Elf64_Sym));
+      eu_static_assert (sizeof (GElf_Sym) == sizeof (Elf64_Sym));
 
       /* The data is already in the correct form.  Just make sure the
 	 index is OK.  */

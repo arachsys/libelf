@@ -31,7 +31,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <errno.h>
 #include <gelf.h>
 #include <stddef.h>
@@ -58,14 +57,14 @@ elf_getshdrstrndx (Elf *elf, size_t *dst)
 
   /* We rely here on the fact that the `elf' element is a common prefix
      of `elf32' and `elf64'.  */
-  assert (offsetof (struct Elf, state.elf.ehdr)
-	  == offsetof (struct Elf, state.elf32.ehdr));
-  assert (sizeof (elf->state.elf.ehdr)
-	  == sizeof (elf->state.elf32.ehdr));
-  assert (offsetof (struct Elf, state.elf.ehdr)
-	  == offsetof (struct Elf, state.elf64.ehdr));
-  assert (sizeof (elf->state.elf.ehdr)
-	  == sizeof (elf->state.elf64.ehdr));
+  eu_static_assert (offsetof (struct Elf, state.elf.ehdr)
+		    == offsetof (struct Elf, state.elf32.ehdr));
+  eu_static_assert (sizeof (elf->state.elf.ehdr)
+		    == sizeof (elf->state.elf32.ehdr));
+  eu_static_assert (offsetof (struct Elf, state.elf.ehdr)
+		    == offsetof (struct Elf, state.elf64.ehdr));
+  eu_static_assert (sizeof (elf->state.elf.ehdr)
+		    == sizeof (elf->state.elf64.ehdr));
 
   if (unlikely (elf->state.elf.ehdr == NULL))
     {

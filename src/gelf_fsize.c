@@ -1,5 +1,6 @@
 /* Return the size of an object file type.
    Copyright (C) 1998-2010, 2015 Red Hat, Inc.
+   Copyright (C) 2025 Mark J. Wielaard <mark@klomp.org>
    This file is part of elfutils.
    Written by Ulrich Drepper <drepper@redhat.com>, 1998.
 
@@ -102,3 +103,48 @@ gelf_fsize (Elf *elf, Elf_Type type, size_t count, unsigned int version)
   return count * __libelf_type_sizes[elf->class - 1][type];
 }
 INTDEF(gelf_fsize)
+
+
+#ifdef MAIN_CHECK
+#include <inttypes.h>
+#include <stdio.h>
+
+void
+test_fsize (Elf_Type type)
+{
+  printf ("Testing 0x%" PRIx32 ": ", type);
+
+  int fsize32 = __libelf_type_sizes[ELFCLASS32 - 1][type];
+  if (fsize32 <= 0)
+    {
+      printf ("Unhandled type %" PRIx32 " for ELFCLASS32\n", type);
+      exit (-1);
+    }
+  printf (" %d, ", fsize32);
+
+  int fsize64 = __libelf_type_sizes[ELFCLASS64 - 1][type];
+  if (fsize64 <= 0)
+    {
+      printf ("Unhandled type %" PRIx32 " for ELFCLASS64\n", type);
+      exit (-1);
+    }
+  printf ("%d\n", fsize64);
+
+  /* In theory fsize for 32 bit could of course be larger than fsize
+     for 64 bit.  But if so, better adjust this testcase and
+     explain.  */
+  if (fsize32 > fsize64)
+    {
+      printf ("fsize32 %d > fsize64 %d\n", fsize32, fsize64);
+      exit(-1);
+    }
+}
+
+int
+main (void)
+{
+  for (Elf_Type type = 0; type < ELF_T_NUM; type++)
+    test_fsize (type);
+  return 0;
+}
+#endif

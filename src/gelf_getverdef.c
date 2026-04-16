@@ -31,7 +31,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <gelf.h>
 #include <string.h>
 
@@ -54,8 +53,8 @@ gelf_getverdef (Elf_Data *data, int offset, GElf_Verdef *dst)
 
   /* It's easy to handle this type.  It has the same size for 32 and
      64 bit objects.  */
-  assert (sizeof (GElf_Verdef) == sizeof (Elf32_Verdef));
-  assert (sizeof (GElf_Verdef) == sizeof (Elf64_Verdef));
+  eu_static_assert (sizeof (GElf_Verdef) == sizeof (Elf32_Verdef));
+  eu_static_assert (sizeof (GElf_Verdef) == sizeof (Elf64_Verdef));
 
   rwlock_rdlock (((Elf_Data_Scn *) data)->s->elf->lock);
 

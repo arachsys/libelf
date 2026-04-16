@@ -118,6 +118,8 @@ elf_newdata (Elf_Scn *scn)
 
   /* Set the predefined values.  */
   result->data.d.d_version = EV_CURRENT;
+  result->data.d.d_type = ELF_T_BYTE;
+  result->data.d.d_align = 1;
 
   result->data.s = scn;
 
