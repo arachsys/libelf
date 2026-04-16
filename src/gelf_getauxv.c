@@ -30,7 +30,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <gelf.h>
 #include <string.h>
 
@@ -84,7 +83,7 @@ gelf_getauxv (Elf_Data *data, int ndx, GElf_auxv_t *dst)
   else
     {
       /* If this is a 64 bit object it's easy.  */
-      assert (sizeof (GElf_auxv_t) == sizeof (Elf64_auxv_t));
+      eu_static_assert (sizeof (GElf_auxv_t) == sizeof (Elf64_auxv_t));
 
       /* The data is already in the correct form.  Just make sure the
 	 index is OK.  */

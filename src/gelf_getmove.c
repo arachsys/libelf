@@ -53,27 +53,50 @@ gelf_getmove (Elf_Data *data, int ndx, GElf_Move *dst)
       return NULL;
     }
 
-  /* The types for 32 and 64 bit are the same.  Lucky us.  */
-  assert (sizeof (GElf_Move) == sizeof (Elf32_Move));
-  assert (sizeof (GElf_Move) == sizeof (Elf64_Move));
-
-  /* The data is already in the correct form.  Just make sure the
-     index is OK.  */
-  if (INVALID_NDX (ndx, GElf_Move, data))
-    {
-      __libelf_seterrno (ELF_E_INVALID_INDEX);
-      goto out;
-    }
-
   elf = ((Elf_Data_Scn *) data)->s->elf;
   rwlock_rdlock (elf->lock);
 
-  *dst = ((GElf_Move *) data->d_buf)[ndx];
+  if (elf->class == ELFCLASS32)
+    {
+      Elf32_Move *src;
 
-  rwlock_unlock (elf->lock);
+      if (INVALID_NDX (ndx, Elf32_Move, data))
+	{
+	  __libelf_seterrno (ELF_E_INVALID_INDEX);
+	  goto out;
+	}
+
+      src = &((Elf32_Move *) data->d_buf)[ndx];
+
+      /* The following copies may perform zero-extension. m_info can be
+	 copied directly since ELF32_M_* and ELF64_M_* are the same.  */
+#define COPY(name) \
+      dst->name = src->name
+      COPY (m_value);
+      COPY (m_info);
+      COPY (m_poffset);
+      COPY (m_repeat);
+      COPY (m_stride);
+    }
+  else
+    {
+      eu_static_assert (sizeof (GElf_Move) == sizeof (Elf64_Move));
+
+      /* The data is already in the correct form.  Just make sure the
+	 index is OK.  */
+      if (INVALID_NDX (ndx, GElf_Move, data))
+	{
+	  __libelf_seterrno (ELF_E_INVALID_INDEX);
+	  goto out;
+	}
+
+      *dst = ((GElf_Move *) data->d_buf)[ndx];
+    }
 
   result = dst;
 
  out:
+  rwlock_unlock (elf->lock);
+
   return result;
 }

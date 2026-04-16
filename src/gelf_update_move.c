@@ -41,37 +41,73 @@
 int
 gelf_update_move (Elf_Data *data, int ndx, GElf_Move *src)
 {
+  int result = 0;
   Elf_Data_Scn *data_scn = (Elf_Data_Scn *) data;
+  Elf *elf;
 
   if (data == NULL)
-    return 0;
+    return result;
 
-  /* The types for 32 and 64 bit are the same.  Lucky us.  */
-  assert (sizeof (GElf_Move) == sizeof (Elf32_Move));
-  assert (sizeof (GElf_Move) == sizeof (Elf64_Move));
-
-  /* Check whether we have to resize the data buffer.  */
-  if (INVALID_NDX (ndx, GElf_Move, &data_scn->d))
-    {
-      __libelf_seterrno (ELF_E_INVALID_INDEX);
-      return 0;
-    }
-
-  if (unlikely (data_scn->d.d_type != ELF_T_MOVE))
+  if (unlikely (data->d_type != ELF_T_MOVE))
     {
       /* The type of the data better should match.  */
       __libelf_seterrno (ELF_E_DATA_MISMATCH);
-      return 0;
+      return result;
     }
 
-  rwlock_wrlock (data_scn->s->elf->lock);
+  elf = data_scn->s->elf;
+  rwlock_wrlock (elf->lock);
 
-  ((GElf_Move *) data_scn->d.d_buf)[ndx] = *src;
+  if (elf->class == ELFCLASS32)
+    {
+      Elf32_Move *move;
+
+      /* Check whether input values are too large for 32 bit conversion.  */
+      if (unlikely (src->m_poffset > 0xffffffffull)
+	  || unlikely (GELF_M_SYM (src->m_info) > 0xffffff)
+	  || unlikely (GELF_M_SIZE (src->m_info) > 0xff))
+	{
+	  __libelf_seterrno (ELF_E_INVALID_DATA);
+	  goto out;
+	}
+
+      /* Check whether we have to resize the data buffer.  */
+      if (INVALID_NDX (ndx, Elf32_Move, data))
+	{
+	  __libelf_seterrno (ELF_E_INVALID_INDEX);
+	  goto out;
+	}
+
+      move = &((Elf32_Move *) data->d_buf)[ndx];
+
+      move->m_value = src->m_value;
+      move->m_info = ELF32_M_INFO (GELF_M_SYM (src->m_info),
+				   GELF_M_SIZE (src->m_info));
+      move->m_poffset = src->m_poffset;
+      move->m_repeat = src->m_repeat;
+      move->m_stride = src->m_stride;
+    }
+  else
+    {
+      eu_static_assert (sizeof (GElf_Move) == sizeof (Elf64_Move));
+
+      /* Check whether we have to resize the data buffer.  */
+      if (INVALID_NDX (ndx, GElf_Move, data))
+	{
+	  __libelf_seterrno (ELF_E_INVALID_INDEX);
+	  goto out;
+	}
+
+      ((Elf64_Move *) data->d_buf)[ndx] = *src;
+    }
+
+  result = 1;
 
   /* Mark the section as modified.  */
   data_scn->s->flags |= ELF_F_DIRTY;
 
-  rwlock_unlock (data_scn->s->elf->lock);
+ out:
+  rwlock_unlock (elf->lock);
 
-  return 1;
+  return result;
 }

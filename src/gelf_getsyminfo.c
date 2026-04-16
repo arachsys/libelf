@@ -31,7 +31,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <gelf.h>
 #include <string.h>
 
@@ -53,8 +52,8 @@ gelf_getsyminfo (Elf_Data *data, int ndx, GElf_Syminfo *dst)
     }
 
   /* The types for 32 and 64 bit are the same.  Lucky us.  */
-  assert (sizeof (GElf_Syminfo) == sizeof (Elf32_Syminfo));
-  assert (sizeof (GElf_Syminfo) == sizeof (Elf64_Syminfo));
+  eu_static_assert (sizeof (GElf_Syminfo) == sizeof (Elf32_Syminfo));
+  eu_static_assert (sizeof (GElf_Syminfo) == sizeof (Elf64_Syminfo));
 
   rwlock_rdlock (((Elf_Data_Scn *) data)->s->elf->lock);
 

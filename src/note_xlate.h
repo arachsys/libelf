@@ -32,7 +32,7 @@ elf_cvt_note (void *dest, const void *src, size_t len, int encode,
 {
   /* Note that the header is always the same size, but the padding
      differs for GNU Property notes.  */
-  assert (sizeof (Elf32_Nhdr) == sizeof (Elf64_Nhdr));
+  eu_static_assert (sizeof (Elf32_Nhdr) == sizeof (Elf64_Nhdr));
 
   while (len >= sizeof (Elf32_Nhdr))
     {

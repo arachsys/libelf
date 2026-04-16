@@ -31,7 +31,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <stddef.h>
 #include "libelfP.h"
 #include "common.h"
@@ -65,8 +64,8 @@ elf_clone (Elf *elf, Elf_Cmd cmd)
       retval->state.elf.scnincr = 10;
 
       /* We have allocated room for some sections.  */
-      assert (offsetof (struct Elf, state.elf32.scns)
-	      == offsetof (struct Elf, state.elf64.scns));
+      eu_static_assert (offsetof (struct Elf, state.elf32.scns)
+			== offsetof (struct Elf, state.elf64.scns));
       retval->state.elf.scns_last = &retval->state.elf32.scns;
       retval->state.elf32.scns.max = elf->state.elf32.scns.max;
 

@@ -31,7 +31,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <gelf.h>
 #include <string.h>
 
@@ -56,8 +55,8 @@ gelf_getlib (Elf_Data *data, int ndx, GElf_Lib *dst)
 
   /* The on disk format of Elf32_Lib and Elf64_Lib is identical.  So
      we can simplify things significantly.  */
-  assert (sizeof (GElf_Lib) == sizeof (Elf32_Lib));
-  assert (sizeof (GElf_Lib) == sizeof (Elf64_Lib));
+  eu_static_assert (sizeof (GElf_Lib) == sizeof (Elf32_Lib));
+  eu_static_assert (sizeof (GElf_Lib) == sizeof (Elf64_Lib));
 
   /* The data is already in the correct form.  Just make sure the
      index is OK.  */

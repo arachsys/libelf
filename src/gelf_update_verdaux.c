@@ -31,7 +31,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <gelf.h>
 #include <string.h>
 
@@ -47,8 +46,8 @@ gelf_update_verdaux (Elf_Data *data, int offset, GElf_Verdaux *src)
     return 0;
 
   /* The types for 32 and 64 bit are the same.  Lucky us.  */
-  assert (sizeof (GElf_Verdaux) == sizeof (Elf32_Verdaux));
-  assert (sizeof (GElf_Verdaux) == sizeof (Elf64_Verdaux));
+  eu_static_assert (sizeof (GElf_Verdaux) == sizeof (Elf32_Verdaux));
+  eu_static_assert (sizeof (GElf_Verdaux) == sizeof (Elf64_Verdaux));
 
   /* Check whether we have to resize the data buffer.  */
   if (unlikely (offset < 0)

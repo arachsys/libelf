@@ -51,12 +51,12 @@ elf_newscn (Elf *elf)
 
   /* We rely on the prefix of the `elf', `elf32', and `elf64' element
      being the same.  */
-  assert (offsetof (Elf, state.elf.scns_last)
-	  == offsetof (Elf, state.elf32.scns_last));
-  assert (offsetof (Elf, state.elf.scns_last)
-	  == offsetof (Elf, state.elf64.scns_last));
-  assert (offsetof (Elf, state.elf32.scns)
-	  == offsetof (Elf, state.elf64.scns));
+  eu_static_assert (offsetof (Elf, state.elf.scns_last)
+		    == offsetof (Elf, state.elf32.scns_last));
+  eu_static_assert (offsetof (Elf, state.elf.scns_last)
+		    == offsetof (Elf, state.elf64.scns_last));
+  eu_static_assert (offsetof (Elf, state.elf32.scns)
+		    == offsetof (Elf, state.elf64.scns));
 
   rwlock_wrlock (elf->lock);
 

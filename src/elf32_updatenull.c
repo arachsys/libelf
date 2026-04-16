@@ -184,6 +184,10 @@ __elfw2(LIBELFBITS,updatenull_wrlock) (Elf *elf, int *change_bop, size_t shnum)
 	     of the zeroth section.  */
 	  Elf_Scn *scn0 = &elf->state.ELFW(elf,LIBELFBITS).scns.data[0];
 
+	  /* Make sure section zero header is actually loaded.  */
+	  if (scn0->shdr.ELFW(e,LIBELFBITS) == NULL)
+	    (void) __elfw2(LIBELFBITS,getshdr_wrlock) (scn0);
+
 	  update_if_changed (scn0->shdr.ELFW(e,LIBELFBITS)->sh_size,
 			     shnum, scn0->shdr_flags);
 	}

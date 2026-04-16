@@ -31,7 +31,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <gelf.h>
 #include <string.h>
 
@@ -54,8 +53,8 @@ gelf_getverdaux (Elf_Data *data, int offset, GElf_Verdaux *dst)
 
   /* It's easy to handle this type.  It has the same size for 32 and
      64 bit objects.  */
-  assert (sizeof (GElf_Verdaux) == sizeof (Elf32_Verdaux));
-  assert (sizeof (GElf_Verdaux) == sizeof (Elf64_Verdaux));
+  eu_static_assert (sizeof (GElf_Verdaux) == sizeof (Elf32_Verdaux));
+  eu_static_assert (sizeof (GElf_Verdaux) == sizeof (Elf64_Verdaux));
 
   rwlock_rdlock (((Elf_Data_Scn *) data)->s->elf->lock);
 

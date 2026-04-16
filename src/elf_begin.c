@@ -327,8 +327,8 @@ file_read_elf (int fildes, void *map_address, unsigned char *e_ident,
     return NULL;
 
   assert ((unsigned int) scncnt == scncnt);
-  assert (offsetof (struct Elf, state.elf32.scns)
-	  == offsetof (struct Elf, state.elf64.scns));
+  eu_static_assert (offsetof (struct Elf, state.elf32.scns)
+		    == offsetof (struct Elf, state.elf64.scns));
   elf->state.elf32.scns.cnt = scncnt;
   elf->state.elf32.scns.max = scnmax;
 
@@ -1159,8 +1159,8 @@ write_file (int fd, Elf_Cmd cmd)
       result->state.elf.scnincr = NSCNSALLOC;
 
       /* We have allocated room for some sections.  */
-      assert (offsetof (struct Elf, state.elf32.scns)
-	      == offsetof (struct Elf, state.elf64.scns));
+      eu_static_assert (offsetof (struct Elf, state.elf32.scns)
+			== offsetof (struct Elf, state.elf64.scns));
       result->state.elf.scns_last = &result->state.elf32.scns;
       result->state.elf32.scns.max = NSCNSALLOC;
     }
