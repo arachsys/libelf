@@ -58,7 +58,8 @@ is_prime (size_t candidate)
 
 /* We need primes for the table size.  */
 size_t
-next_prime (size_t seed)
+__libelf_next_prime (size_t seed)
+attribute_hidden
 {
   /* Make it definitely odd.  */
   seed |= 1;

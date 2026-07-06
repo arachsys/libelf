@@ -91,7 +91,8 @@ static const uint32_t crc32_table[256] =
 };
 
 uint32_t
-crc32 (uint32_t crc, unsigned char *buf, size_t len)
+__libelf_crc32 (uint32_t crc, unsigned char *buf, size_t len)
+attribute_hidden
 {
   unsigned char *end;
 
