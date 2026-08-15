@@ -168,8 +168,11 @@ elf_compress_gnu (Elf_Scn *scn, int inflate, unsigned int flags)
       /* One more sanity check, size should be bigger than original
 	 data size plus some overhead (4 chars ZLIB + 8 bytes size + 6
 	 bytes zlib stream overhead + 5 bytes overhead max for one 16K
-	 block) and should fit into a size_t.  */
-      if (gsize + 4 + 8 + 6 + 5 < data->d_size || gsize > SIZE_MAX)
+	 block) and should fit into a size_t (or in UINT32_MAX for
+	 32bit ELF).  */
+      if (gsize + 4 + 8 + 6 + 5 < data->d_size
+	  || gsize > SIZE_MAX
+	  || (elfclass == ELFCLASS32 && gsize > UINT32_MAX))
 	{
 	  __libelf_seterrno (ELF_E_NOT_COMPRESSED);
 	  return -1;

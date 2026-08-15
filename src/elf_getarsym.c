@@ -53,9 +53,13 @@ read_number_entries (uint64_t *nump, Elf *elf, size_t *offp, bool index64_p)
 
   size_t w = index64_p ? 8 : 4;
   if (elf->map_address != NULL)
-    /* Use memcpy instead of pointer dereference so as not to assume the
-       field is naturally aligned within the file.  */
-    memcpy (&u, elf->map_address + *offp, sizeof u);
+    {
+      if (*offp + w > elf->start_offset + elf->maximum_size)
+	return -1;
+      /* Use memcpy instead of pointer dereference so as not to assume the
+	 field is naturally aligned within the file.  */
+      memcpy (&u, elf->map_address + *offp, w);
+    }
   else if ((size_t) pread_retry (elf->fildes, &u, w, *offp) != w)
     return -1;
 
@@ -159,7 +163,7 @@ elf_getarsym (Elf *elf, size_t *ptr)
 	  __libelf_seterrno (ELF_E_NO_INDEX);
 	  goto out;
 	}
-      int w = index64_p ? 8 : 4;
+      size_t w = index64_p ? 8 : 4;
 
       /* We have an archive.  The first word in there is the number of
 	 entries in the table.  */
@@ -184,7 +188,8 @@ elf_getarsym (Elf *elf, size_t *ptr)
 #if SIZE_MAX <= 4294967295U
 	  || n >= SIZE_MAX / sizeof (Elf_Arsym)
 #endif
-	  || n > index_size / w)
+	  || index_size < w
+	  || n > (index_size - w) / w)
 	{
 	  /* This index table cannot be right since it does not fit into
 	     the file.  */
@@ -199,6 +204,7 @@ elf_getarsym (Elf *elf, size_t *ptr)
 	{
 	  void *file_data; /* unit32_t[n] or uint64_t[n] */
 	  char *str_data;
+	  char *str_end;
 	  size_t sz = n * w;
 
 	  if (elf->map_address == NULL)
@@ -238,6 +244,7 @@ elf_getarsym (Elf *elf, size_t *ptr)
 		}
 
 	      str_data = (char *) new_str;
+	      str_end = new_str + (index_size - sz);
 	    }
 	  else
 	    {
@@ -254,12 +261,13 @@ elf_getarsym (Elf *elf, size_t *ptr)
 		  file_data = memcpy (temp_data, elf->map_address + off, sz);
 		}
 	      str_data = (char *) (elf->map_address + off + sz);
+	      str_end = (char *) (elf->map_address + off + index_size - w);
 	    }
 
 	  /* Now we can build the data structure.  */
 	  Elf_Arsym *arsym = elf->state.ar.ar_sym;
-	  uint64_t (*u64)[n] = file_data;
-	  uint32_t (*u32)[n] = file_data;
+	  uint64_t (*u64)[n+1] = file_data;
+	  uint32_t (*u32)[n+1] = file_data;
 	  for (size_t cnt = 0; cnt < n; ++cnt)
 	    {
 	      arsym[cnt].as_name = str_data;
@@ -291,16 +299,25 @@ elf_getarsym (Elf *elf, size_t *ptr)
 	      else
 		arsym[cnt].as_off = (*u32)[cnt];
 
+	      /* The symbol name must be NUL terminated within the string
+		 table.  Otherwise the archive symbol table is corrupt and
+		 hashing or scanning the name would read out of bounds.  */
+	      char *endp = (str_data < str_end
+			    ? memchr (str_data, '\0', str_end - str_data)
+			    : NULL);
+	      if (unlikely (endp == NULL))
+		{
+		  if (elf->map_address == NULL)
+		    {
+		      free (elf->state.ar.ar_sym);
+		      elf->state.ar.ar_sym = NULL;
+		    }
+		  __libelf_seterrno (ELF_E_INVALID_ARCHIVE);
+		  goto out;
+		}
+
 	      arsym[cnt].as_hash = _dl_elf_hash (str_data);
-#if HAVE_DECL_RAWMEMCHR
-	      str_data = rawmemchr (str_data, '\0') + 1;
-#else
-	      char c;
-	      do {
-		c = *str_data;
-		str_data++;
-	      } while (c);
-#endif
+	      str_data = endp + 1;
 	    }
 
 	  /* At the end a special entry.  */
