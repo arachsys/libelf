@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 #include "eu-config.h"
 
+#define HAVE_DECL_GETENTROPY 1
 #define HAVE_DECL_MEMPCPY 1
 #define HAVE_DECL_MEMRCHR 1
 #define HAVE_DECL_POWEROF2 1

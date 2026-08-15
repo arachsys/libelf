@@ -583,7 +583,6 @@ elf_compress (Elf_Scn *scn, int type, unsigned int flags)
 
   Elf64_Xword sh_flags;
   Elf64_Word sh_type;
-  Elf64_Xword sh_addralign;
   union shdr
   {
     Elf32_Shdr *s32;
@@ -597,7 +596,6 @@ elf_compress (Elf_Scn *scn, int type, unsigned int flags)
 
       sh_flags = shdr.s32->sh_flags;
       sh_type = shdr.s32->sh_type;
-      sh_addralign = shdr.s32->sh_addralign;
     }
   else
     {
@@ -607,7 +605,6 @@ elf_compress (Elf_Scn *scn, int type, unsigned int flags)
 
       sh_flags = shdr.s64->sh_flags;
       sh_type = shdr.s64->sh_type;
-      sh_addralign = shdr.s64->sh_addralign;
     }
 
   if ((sh_flags & SHF_ALLOC) != 0)
@@ -669,7 +666,7 @@ elf_compress (Elf_Scn *scn, int type, unsigned int flags)
 	  chdr.ch_type = type;
 	  chdr.ch_reserved = 0;
 	  chdr.ch_size = orig_size;
-	  chdr.ch_addralign = sh_addralign;
+	  chdr.ch_addralign = orig_addralign;
 	  if (elfdata != MY_ELFDATA)
 	    {
 	      CONVERT (chdr.ch_type);
