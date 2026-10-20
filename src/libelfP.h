@@ -486,6 +486,19 @@ extern int __elf64_updatefile (Elf *elf, int change_bo, size_t shnum)
      internal_function;
 
 
+static inline Elf *
+__libelf_keep (Elf *elf)
+{
+  if (elf == NULL)
+    return NULL;
+
+  rwlock_wrlock (elf->lock);
+  elf->ref_count++;
+  rwlock_unlock (elf->lock);
+
+  return elf;
+}
+
 /* Alias for exported functions to avoid PLT entries, and
    rdlock/wrlock variants of these functions.  */
 extern int __elf_end_internal (Elf *__elf) attribute_hidden;
@@ -588,6 +601,9 @@ extern void * __libelf_decompress (int chtype, void *buf_in, size_t size_in,
 				   size_t size_out) internal_function;
 extern void * __libelf_decompress_elf (Elf_Scn *scn,
 				       size_t *size_out, size_t *addralign)
+     internal_function;
+extern void * __libelf_decompress_elf_wrlock (Elf_Scn *scn, size_t *size_out,
+					      size_t *addralign)
      internal_function;
 
 
