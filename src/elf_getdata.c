@@ -471,13 +471,11 @@ __libelf_set_data_list_rdlock (Elf_Scn *scn, int wrlocked)
   scn->data_list_rear = &scn->data_list;
 }
 
-Elf_Data *
-internal_function
-__elf_getdata_rdlock (Elf_Scn *scn, Elf_Data *data)
+static Elf_Data *
+get_data_lock (Elf_Scn *scn, Elf_Data *data, int wrlocked)
 {
   Elf_Data *result = NULL;
   Elf *elf;
-  int locked = 0;
 
   if (scn == NULL)
     return NULL;
@@ -539,13 +537,16 @@ __elf_getdata_rdlock (Elf_Scn *scn, Elf_Data *data)
   /* If the data for this section was not yet initialized do it now.  */
   if (scn->data_read == 0)
     {
-      /* We cannot acquire a write lock while we are holding a read
-         lock.  Therefore give up the read lock and then get the write
-         lock.  But this means that the data could meanwhile be
-         modified, therefore start the tests again.  */
-      rwlock_unlock (elf->lock);
-      rwlock_wrlock (elf->lock);
-      locked = 1;
+      if (wrlocked == 0)
+	{
+	  /* We cannot acquire a write lock while we are holding a read
+	     lock.  Therefore give up the read lock and then get the write
+	     lock.  But this means that the data could meanwhile be
+	     modified, therefore start the tests again.  */
+	  rwlock_unlock (elf->lock);
+	  rwlock_wrlock (elf->lock);
+	  wrlocked = 1;
+	}
 
       /* Read the data from the file.  There is always a file (or
 	 memory region) associated with this descriptor since
@@ -559,7 +560,7 @@ __elf_getdata_rdlock (Elf_Scn *scn, Elf_Data *data)
      empty in case the section has size zero (for whatever reason).
      Now create the converted data in case this is necessary.  */
   if (scn->data_list_rear == NULL)
-    __libelf_set_data_list_rdlock (scn, locked);
+    __libelf_set_data_list_rdlock (scn, wrlocked);
 
   /* Return the first data element in the list.  */
   result = &scn->data_list.data.d;
@@ -585,15 +586,15 @@ elf_getdata (Elf_Scn *scn, Elf_Data *data)
 
 Elf_Data *
 internal_function
+__elf_getdata_rdlock (Elf_Scn *scn, Elf_Data *data)
+{
+  return get_data_lock (scn, data, 0);
+}
+
+Elf_Data *
+internal_function
 __elf_getdata_wrlock (Elf_Scn *scn, Elf_Data *data)
 {
-  Elf_Data *result;
-
-  if (scn == NULL)
-    return NULL;
-
-  result = __elf_getdata_rdlock (scn, data);
-
-  return result;
+  return get_data_lock (scn, data, 1);
 }
 INTDEF(elf_getdata)

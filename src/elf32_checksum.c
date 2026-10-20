@@ -77,14 +77,6 @@ elfw2(LIBELFBITS,checksum) (Elf *elf)
 		     || (ident[EI_DATA] == ELFDATA2MSB
 			 && BYTE_ORDER == BIG_ENDIAN));
 
-  /* If we don't have native byte order, we will likely need to
-     convert the data with xlate functions.  We do it upfront instead
-     of relocking mid-iteration. */
-  if (!likely (same_byte_order))
-    rwlock_wrlock (elf->lock);
-  else
-    rwlock_rdlock (elf->lock);
-
   /* Iterate over all sections to find those which are not strippable.  */
   scn = NULL;
   while ((scn = INTUSE(elf_nextscn) (elf, scn)) != NULL)
@@ -161,7 +153,6 @@ elfw2(LIBELFBITS,checksum) (Elf *elf)
     }
 
  out:
-  rwlock_unlock (elf->lock);
   return result;
 }
 INTDEF(elfw2(LIBELFBITS,checksum))

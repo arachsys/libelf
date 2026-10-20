@@ -40,10 +40,10 @@
 
 
 static void *
-get_zdata (Elf_Scn *strscn)
+get_zdata_wrlock (Elf_Scn *strscn)
 {
   size_t zsize, zalign;
-  void *zdata = __libelf_decompress_elf (strscn, &zsize, &zalign);
+  void *zdata = __libelf_decompress_elf_wrlock (strscn, &zsize, &zalign);
   if (zdata == NULL)
     return NULL;
 
@@ -100,6 +100,7 @@ elf_strptr (Elf *elf, size_t idx, size_t offset)
 	}
     }
 
+  int wrlocked = 0;
   size_t sh_size = 0;
   if (elf->class == ELFCLASS32)
     {
@@ -115,8 +116,19 @@ elf_strptr (Elf *elf, size_t idx, size_t offset)
 	sh_size = shdr->sh_size;
       else
 	{
-	  if (strscn->zdata_base == NULL && get_zdata (strscn) == NULL)
-	    goto out;
+	  if (strscn->zdata_base == NULL)
+	    {
+	      rwlock_unlock (elf->lock);
+	      rwlock_wrlock (elf->lock);
+	      wrlocked = 1;
+
+	      /* Skip decompression if it occurred while grabbing
+		 the wrlock.  */
+	      if (strscn->zdata_base == NULL
+		  && get_zdata_wrlock (strscn) == NULL)
+		goto out;
+	    }
+
 	  sh_size = strscn->zdata_size;
 	}
 
@@ -141,8 +153,19 @@ elf_strptr (Elf *elf, size_t idx, size_t offset)
 	sh_size = shdr->sh_size;
       else
 	{
-	  if (strscn->zdata_base == NULL && get_zdata (strscn) == NULL)
-	    goto out;
+	  if (strscn->zdata_base == NULL)
+	    {
+	      rwlock_unlock (elf->lock);
+	      rwlock_wrlock (elf->lock);
+	      wrlocked = 1;
+
+	      /* Skip decompression if it occurred while grabbing
+		 the wrlock.  */
+	      if (strscn->zdata_base == NULL
+		  && get_zdata_wrlock (strscn) == NULL)
+		goto out;
+	    }
+
 	  sh_size = strscn->zdata_size;
 	}
 
@@ -156,8 +179,12 @@ elf_strptr (Elf *elf, size_t idx, size_t offset)
 
   if (strscn->rawdata_base == NULL && ! strscn->data_read)
     {
-      rwlock_unlock (elf->lock);
-      rwlock_wrlock (elf->lock);
+      if (wrlocked == 0)
+	{
+	  rwlock_unlock (elf->lock);
+	  rwlock_wrlock (elf->lock);
+	  wrlocked = 1;
+	}
       if (strscn->rawdata_base == NULL && ! strscn->data_read
 	/* Read the section data.  */
 	  && __libelf_set_rawdata_wrlock (strscn) != 0)

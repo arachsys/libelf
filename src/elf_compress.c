@@ -410,6 +410,21 @@ __libelf_decompress_zlib (void *buf_in, size_t size_in, size_t size_out)
 static void *
 __libelf_decompress_zstd (void *buf_in, size_t size_in, size_t size_out)
 {
+  /* Catch highly unlikely compression ratios so we don't allocate
+     some giant amount of memory for nothing.  The smallest zstd block
+     is a 3-byte block header followed by a 1-byte RLE payload, and a
+     single block expands to at most ZSTD_BLOCKSIZE_MAX bytes, so no
+     valid frame can expand by more than ZSTD_BLOCKSIZE_MAX / 4
+     (32768:1).  See doc/zstd_compression_format.md in the zstd
+     sources.  */
+  const size_t zstd_min_block = 3 + 1;
+  const size_t zstd_max_ratio = ZSTD_BLOCKSIZE_MAX / zstd_min_block;
+  if (unlikely (size_out / zstd_max_ratio > size_in))
+    {
+      __libelf_seterrno (ELF_E_INVALID_DATA);
+      return NULL;
+    }
+
   /* Malloc might return NULL when requesting zero size.  This is highly
      unlikely, it would only happen when the compression was forced.
      But we do need a non-NULL buffer to return and set as result.
@@ -450,13 +465,30 @@ __libelf_decompress (int chtype, void *buf_in, size_t size_in, size_t size_out)
     }
 }
 
-void *
-internal_function
-__libelf_decompress_elf (Elf_Scn *scn, size_t *size_out, size_t *addralign)
+static void *
+decompress_elf (Elf_Scn *scn, size_t *size_out, size_t *addralign,
+		bool wrlocked)
 {
   GElf_Chdr chdr;
-  if (gelf_getchdr (scn, &chdr) == NULL)
-    return NULL;
+
+  if (scn->elf->class == ELFCLASS32)
+    {
+      Elf32_Chdr *c
+	= wrlocked ? __elf32_getchdr_wrlock (scn) : elf32_getchdr (scn);
+      if (c == NULL)
+	return NULL;
+      chdr.ch_type = c->ch_type;
+      chdr.ch_size = c->ch_size;
+      chdr.ch_addralign = c->ch_addralign;
+    }
+  else
+    {
+      Elf64_Chdr *c
+	= wrlocked ? __elf64_getchdr_wrlock (scn) : elf64_getchdr (scn);
+      if (c == NULL)
+	return NULL;
+      chdr = *c;
+    }
 
   bool unknown_compression = false;
   if (chdr.ch_type != ELFCOMPRESS_ZLIB)
@@ -488,7 +520,8 @@ __libelf_decompress_elf (Elf_Scn *scn, size_t *size_out, size_t *addralign)
      is slightly inefficient when the raw data needs to be
      converted since then we'll be converting the whole buffer and
      not just Chdr.  */
-  Elf_Data *data = elf_getdata (scn, NULL);
+  Elf_Data *data
+    = wrlocked ? __elf_getdata_wrlock (scn, NULL) : elf_getdata (scn, NULL);
   if (data == NULL)
     return NULL;
 
@@ -503,6 +536,21 @@ __libelf_decompress_elf (Elf_Scn *scn, size_t *size_out, size_t *addralign)
   *size_out = chdr.ch_size;
   *addralign = chdr.ch_addralign;
   return buf_out;
+}
+
+void *
+internal_function
+__libelf_decompress_elf_wrlock (Elf_Scn *scn, size_t *size_out,
+				size_t *addralign)
+{
+  return decompress_elf (scn, size_out, addralign, true);
+}
+
+void *
+internal_function
+__libelf_decompress_elf (Elf_Scn *scn, size_t *size_out, size_t *addralign)
+{
+  return decompress_elf (scn, size_out, addralign, false);
 }
 
 /* Assumes buf is a malloced buffer.  */
